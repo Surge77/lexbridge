@@ -48,3 +48,30 @@ jobs:
 
       - name: Types
         run: pyright
+
+  real-sources:
+    name: real statute PDFs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install
+        run: pip install -e ".[dev]"
+
+      # Keyed on the manifest, not the code: what is cached is the downloaded PDFs, and
+      # those change only when data/sources.json pins different bytes. Government hosts
+      # are slow and intermittently 504, so a warm cache also keeps this job reliable.
+      - name: Cache the PDFs
+        uses: actions/cache@v4
+        with:
+          path: data/raw
+          key: statutes-${{ hashFiles('data/sources.json') }}
+
+      # The correctness gates: section coverage for all three texts, plus the 2013/2018
+      # IPC inserts that prove the source is the last amended text.
+      - name: Parse the real PDFs
+        run: pytest -m integration -q

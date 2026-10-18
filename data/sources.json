@@ -1,0 +1,30 @@
+[
+  {
+    "key": "bns_current",
+    "url": "https://indiacode.gov.in/server/api/core/bitstreams/8007a80e-259b-429d-9ca4-1a2f474b5000/content",
+    "filename": "bns_current.pdf",
+    "sha256": "d4449e9995b21fd52627811d08f9d21feda6a3678b7e5355b651242d152167f5",
+    "size": 1115210
+  },
+  {
+    "key": "bns_original",
+    "url": "https://prsindia.org/files/bills_acts/bills_parliament/2023/The%20Bharatiya%20Nyaya%20Sanhita,%202023.pdf",
+    "filename": "bns_original.pdf",
+    "sha256": "67c92f7869420685e6cdc29b1bdde19fff91312b10241b3ed3e1163c5399600b",
+    "size": 1382923
+  },
+  {
+    "key": "capt_correspondence",
+    "url": "https://www.keralaprisons.gov.in/userfiles/act-and-rules/comparison_summary_BNS_to_IPC.pdf",
+    "filename": "capt_correspondence.pdf",
+    "sha256": "3ad875b6162deb9d6a722244c537b1ffa72ee20e025f08a32d272f2612cf9a25",
+    "size": 716640
+  },
+  {
+    "key": "ipc",
+    "url": "https://indiacode.gov.in/server/api/core/bitstreams/337c7a03-60c6-4953-8dd6-90e65c343629/content",
+    "filename": "ipc.pdf",
+    "sha256": "fa8878e0208e0942e51bcf7e437efa7b6d25baecb04f4cd83da30df44c977f85",
+    "size": 1155037
+  }
+]
