@@ -16,6 +16,9 @@ keywords = ["rag", "retrieval", "legal", "ipc", "bns", "india"]
 # reproduced, and an unpinned dependency is the easiest way to lose that.
 dependencies = [
     "pydantic==2.14.1",
+    # Not PyMuPDF: it is AGPL, and this ships as a network service. See
+    # docs/decisions/0001-pdfplumber-not-pymupdf.md.
+    "pdfplumber==0.11.10",
 ]
 
 [project.optional-dependencies]
