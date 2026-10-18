@@ -25,7 +25,7 @@ ACT_OF = {"bns_original": Act.BNS, "bns_current": Act.BNS, "ipc": Act.IPC}
 # Every section including lettered inserts and repealed ones, as measured on the pinned
 # files. Base coverage cannot see a dropped insert (a malformed "354D." does not break
 # the sequence), so the exact count is checked too. A new pin means re-measuring this.
-SECTION_COUNT = {"bns_original": 358, "bns_current": 358, "ipc": 579}
+SECTION_COUNT = {"bns_original": 358, "bns_current": 358, "ipc": 581}
 
 # Measured on the PRS gazette: margin notes sit within 112pt of either edge (body text
 # starts at x 118), and the running header ends above 75pt.

@@ -23,7 +23,8 @@ from lexbridge.schema import Act, Section, Status, section_key
 EM_DASH, EN_DASH = chr(0x2014), chr(0x2013)
 PAGE_NUMBER = re.compile(r"\d{1,3}")
 MARKER = re.compile(r"\b\d+\[")
-NUMBER = r"(\d{1,3}[A-Z]{0,3})"
+# "171-I." is how IndiaCode prints 171I, hyphenated so the I is not read as a 1.
+NUMBER = r"(\d{1,3}(?:-?[A-Z]{1,3})?)"
 # The stop after the number can be missing, but only seen behind an amendment marker:
 # "1[17 “Government”.—" (IPC 17). Unmarked lines still need it, so a body line like
 # "100 rupees" can never pass for a heading.
@@ -65,7 +66,7 @@ def _continuation(body: list[Line], i: int, number: str) -> list[str]:
     following: list[str] = []
     for line in body[i + 1 : i + 1 + TITLE_LOOKAHEAD]:
         found = HEADING.fullmatch(line.text)
-        if found and _follows(found.group(1) or found.group(2), number):
+        if found and _follows((found.group(1) or found.group(2)).replace("-", ""), number):
             break
         following.append(line.text)
     return following
@@ -77,7 +78,8 @@ def _heading(body: list[Line], i: int, last: str | None) -> tuple[str, Status, s
     if not found:
         return None
     # A stray dash can follow the number itself: "255.—Public servant disobeying" (BNS).
-    number, rest = found.group(1) or found.group(2), found.group(3).lstrip(f"{EM_DASH}{EN_DASH} ")
+    number = (found.group(1) or found.group(2)).replace("-", "")
+    rest = found.group(3).lstrip(f"{EM_DASH}{EN_DASH} ")
     if not _follows(number, last):
         return None
     joined = " ".join([rest, *_continuation(body, i, number)])

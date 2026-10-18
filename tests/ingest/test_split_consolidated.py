@@ -180,3 +180,12 @@ def test_repealed_is_a_repeal_form_too() -> None:
     lines = page(1, "1. First.—Text.", "2. [Old definition.] Repealed by Act 5 of 1950.")
 
     assert split(lines)["2"].status is Status.REPEALED
+
+
+def test_a_hyphenated_letter_suffix_is_the_same_section() -> None:
+    # IndiaCode prints section 171I as "171-I." so the I is not misread as a 1.
+    lines = page(1, "1. First.—Text.", "1-I. Failure to keep election accounts.—Whoever.")
+
+    sections = split(lines)
+    assert list(sections) == ["1", "1I"]
+    assert sections["1I"].title == "Failure to keep election accounts"
