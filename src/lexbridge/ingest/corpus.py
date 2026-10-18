@@ -15,6 +15,12 @@ from pathlib import Path
 
 from lexbridge.ingest.fetch import PinMismatchError
 from lexbridge.ingest.layout import read_lines
+from lexbridge.ingest.mapping import (
+    Correspondence,
+    correspondences,
+    read_rows,
+    require_consistent,
+)
 from lexbridge.ingest.split_bns import split_bns
 from lexbridge.ingest.split_consolidated import split_consolidated
 from lexbridge.schema import Act, Section, section_key
@@ -25,7 +31,7 @@ ACT_OF = {"bns_original": Act.BNS, "bns_current": Act.BNS, "ipc": Act.IPC}
 # Every section including lettered inserts and repealed ones, as measured on the pinned
 # files. Base coverage cannot see a dropped insert (a malformed "354D." does not break
 # the sequence), so the exact count is checked too. A new pin means re-measuring this.
-SECTION_COUNT = {"bns_original": 358, "bns_current": 358, "ipc": 579}
+SECTION_COUNT = {"bns_original": 358, "bns_current": 358, "ipc": 581}
 
 # Measured on the PRS gazette: margin notes sit within 112pt of either edge (body text
 # starts at x 118), and the running header ends above 75pt.
@@ -96,3 +102,16 @@ def load_sections(raw_dir: Path, pins: Mapping[str, str]) -> dict[str, list[Sect
         )
         for key, found in corpus.items()
     }
+
+
+def load_correspondences(
+    raw_dir: Path, pins: Mapping[str, str], corpus: Mapping[str, list[Section]]
+) -> list[Correspondence]:
+    """The CAPT BNS-IPC table, verified against its pin and against the parsed codes."""
+    verify_pins(raw_dir, pins, ["capt_correspondence"])
+    found = correspondences(read_rows(raw_dir / "capt_correspondence.pdf"))
+    return require_consistent(
+        found,
+        bns={s.number for s in corpus["bns_current"]},
+        ipc={s.number for s in corpus["ipc"]},
+    )

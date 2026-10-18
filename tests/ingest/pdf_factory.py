@@ -32,13 +32,27 @@ class Rule:
     top: float
 
 
+@dataclass(frozen=True)
+class Box:
+    """An outlined rectangle, like IndiaCode's frame around amended text."""
+
+    x0: float
+    x1: float
+    top: float
+    bottom: float
+
+
 def _escape(text: str) -> str:
     return text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
 
 
-def _content(items: list[Text | Rule]) -> bytes:
+def _content(items: list[Text | Rule | Box]) -> bytes:
     ops = []
     for t in items:
+        if isinstance(t, Box):
+            y = PAGE_HEIGHT - t.bottom
+            ops.append(f"0.5 w {t.x0} {y} {t.x1 - t.x0} {t.bottom - t.top} re S")
+            continue
         if isinstance(t, Rule):
             y = PAGE_HEIGHT - t.top
             ops.append(f"0.5 w {t.x0} {y} m {t.x1} {y} l S")
@@ -50,7 +64,7 @@ def _content(items: list[Text | Rule]) -> bytes:
     return "\n".join(ops).encode("latin-1")
 
 
-def write_pdf(path: Path, pages: list[list[Text | Rule]]) -> Path:
+def write_pdf(path: Path, pages: list[list[Text | Rule | Box]]) -> Path:
     objects: list[bytes] = []
     page_ids = [4 + 2 * i for i in range(len(pages))]
     kids = " ".join(f"{pid} 0 R" for pid in page_ids)

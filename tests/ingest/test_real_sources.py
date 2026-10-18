@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from lexbridge.ingest.corpus import load_sections
+from lexbridge.ingest.corpus import load_correspondences, load_sections
 from lexbridge.ingest.fetch import SOURCES, fetch_all, load_pins
 from lexbridge.schema import Section, Status
 
@@ -55,3 +55,24 @@ def test_the_ipc_is_the_last_amended_text(corpus: dict[str, list[Section]]) -> N
         assert by_number[number].status is Status.IN_FORCE
     assert by_number["354D"].title == "Stalking"
     assert by_number["420"].title == "Cheating and dishonestly inducing delivery of property"
+
+
+# Widely published IPC -> BNS correspondences, used to spot-check the parsed table.
+# 124A (sedition) has no counterpart: the BNS dropped the offence.
+KNOWN = {
+    "302": {"103(1)"}, "420": {"318(4)"}, "498A": {"85", "86"}, "323": {"115(2)"},
+    "354D": {"78"}, "307": {"109"}, "34": {"3(5)"}, "120B": {"61(2)"}, "124A": set(),
+}
+
+
+def test_the_correspondence_table_agrees_with_well_known_mappings(
+    corpus: dict[str, list[Section]],
+) -> None:
+    found = load_correspondences(DATA / "raw", load_pins(DATA / "sources.json"), corpus)
+    to_bns: dict[str, set[str]] = {ipc: set() for ipc in KNOWN}
+    for c in found:
+        for ipc in c.ipc:
+            if ipc in to_bns:
+                to_bns[ipc].add(c.bns_section + c.bns_sub)
+
+    assert to_bns == KNOWN
