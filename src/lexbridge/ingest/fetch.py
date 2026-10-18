@@ -5,7 +5,7 @@ bare-act PDF is not acceptable even when it is easier to reach.
 
 Usage:
     python -m lexbridge.ingest.fetch            # fetch, verifying against data/sources.json
-    python -m lexbridge.ingest.fetch --repin    # accept new bytes and rewrite the pins
+    python -m lexbridge.ingest.fetch --repin    # re-download everything and rewrite the pins
 """
 
 from __future__ import annotations
@@ -229,8 +229,13 @@ def merge_manifest(results: Iterable[FetchResult], path: Path) -> None:
 
 def main(data_dir: Path = Path("data")) -> None:  # pragma: no cover - network entry point
     manifest = data_dir / "sources.json"
-    pins = {} if "--repin" in sys.argv else load_pins(manifest)
-    results, failures = fetch_all(SOURCES, data_dir / "raw", pins=pins)
+    repin = "--repin" in sys.argv
+    raw = data_dir / "raw"
+    if repin:
+        # A repin is for when upstream changed, so cached files must not be reused.
+        for source in SOURCES:
+            (raw / source.filename).unlink(missing_ok=True)
+    results, failures = fetch_all(SOURCES, raw, pins={} if repin else load_pins(manifest))
     merge_manifest(results, manifest)
     for r in results:
         print(f"{r.key:22} {r.size:>10,} bytes  {r.sha256[:12]}")
