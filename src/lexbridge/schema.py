@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from datetime import date
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -11,10 +12,18 @@ from pydantic import BaseModel, ConfigDict, Field
 # (IPC 120A, 498A, 376DB). Section "0" does not exist in either code.
 SECTION_NUMBER = re.compile(r"[1-9]\d{0,2}[A-Z]{0,3}")
 
+# Notification S.O. 850(E), 23 February 2024. An offence committed before this date is
+# tried under the IPC (BNS s.358 saves it), on or after it under the BNS.
+BNS_IN_FORCE_FROM = date(2024, 7, 1)
+
 
 class Act(StrEnum):
     IPC = "IPC"
     BNS = "BNS"
+
+
+def act_in_force_on(day: date) -> Act:
+    return Act.IPC if day < BNS_IN_FORCE_FROM else Act.BNS
 
 
 class Status(StrEnum):
