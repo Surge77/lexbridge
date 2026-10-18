@@ -21,3 +21,6 @@ htmlcov/
 .ruff_cache/
 dist/
 *.egg-info/
+
+# Built bundles are reproducible from the pinned PDFs (python -m lexbridge.ingest.package).
+artifacts/
