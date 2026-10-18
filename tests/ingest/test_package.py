@@ -73,3 +73,11 @@ def test_building_into_a_used_directory_is_refused(tmp_path: Path) -> None:
 
     with pytest.raises(FileExistsError, match="v1"):
         build(out)
+
+
+def test_bundle_files_end_lines_with_lf_on_every_os(tmp_path: Path) -> None:
+    # Windows text mode writes CRLF; the manifest hashes would then name the build OS.
+    out = build(tmp_path / "v1")
+
+    for name in [*BUNDLE_FILES, "manifest.json"]:
+        assert b"\r" not in (out / name).read_bytes(), name

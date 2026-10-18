@@ -31,9 +31,13 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
 
+      # CPU torch first, from PyTorch's own index, so the next line finds it satisfied
+      # instead of pulling the multi-gigabyte CUDA build from PyPI. Keep the version in
+      # step with pyproject.toml.
       - name: Install
         run: |
           python -m pip install --upgrade pip
+          pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cpu
           pip install -e ".[dev]"
 
       # Lint only, not `ruff format`: the formatter would reflow the statute text kept
@@ -60,7 +64,9 @@ jobs:
           cache: pip
 
       - name: Install
-        run: pip install -e ".[dev]"
+        run: |
+          pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[dev]"
 
       # Keyed on the manifest, not the code: what is cached is the downloaded PDFs, and
       # those change only when data/sources.json pins different bytes. Government hosts
