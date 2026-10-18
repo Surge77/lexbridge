@@ -4,17 +4,21 @@ Government hosts are the only sources: the bot quotes this text as law, so a com
 bare-act PDF is not acceptable even when it is easier to reach.
 
 Usage:
-    python -m lexbridge.ingest.fetch            # writes data/raw/*.pdf and data/sources.json
+    python -m lexbridge.ingest.fetch            # fetch, verifying against data/sources.json
+    python -m lexbridge.ingest.fetch --repin    # accept new bytes and rewrite the pins
 """
 
 from __future__ import annotations
 
 import hashlib
+import http.client
 import json
+import os
+import sys
 import time
 import urllib.error
 import urllib.request
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -32,6 +36,14 @@ INDIACODE_CONTENT = "https://indiacode.gov.in/server/api/core/bitstreams"
 
 class NotAPdfError(ValueError):
     """The host answered, but not with a PDF — usually a CDN error page."""
+
+
+class PinMismatchError(ValueError):
+    """The bytes differ from the SHA-256 committed in data/sources.json.
+
+    Never retried and never written: a changed statute file must be re-pinned on
+    purpose (--repin), not absorbed silently by the next build.
+    """
 
 
 @dataclass(frozen=True)
@@ -97,53 +109,11 @@ def _is_retryable(error: Exception) -> bool:
     if isinstance(error, urllib.error.HTTPError):
         # 4xx means the URL is wrong or gone; asking again will not change the answer.
         return error.code >= 500 or error.code == 429
-    return isinstance(error, OSError | NotAPdfError)
+    # HTTPException covers IncompleteRead: Akamai sometimes drops the body mid-transfer.
+    return isinstance(error, OSError | NotAPdfError | http.client.HTTPException)
 
 
-def download(
-    source: Source,
-    dest_dir: Path,
-    *,
-    opener: Opener = _urlopen,
-    sleep: Callable[[float], None] = time.sleep,
-) -> FetchResult:
-    """Fetch one source into dest_dir, rejecting anything that is not a PDF."""
-    last_error: Exception | None = None
-    for attempt in range(1, MAX_ATTEMPTS + 1):
-        try:
-            body = opener(source.url, TIMEOUT_SECONDS)
-            if not body.startswith(PDF_MAGIC):
-                raise NotAPdfError(
-                    f"{source.key}: expected a PDF from {source.url}, got {body[:40]!r}"
-                )
-        except Exception as error:
-            if not _is_retryable(error):
-                raise
-            last_error = error
-            if attempt < MAX_ATTEMPTS:
-                sleep(BACKOFF_SECONDS * attempt)
-            continue
-
-        dest_dir.mkdir(parents=True, exist_ok=True)
-        (dest_dir / source.filename).write_bytes(body)
-        return FetchResult(
-            key=source.key,
-            url=source.url,
-            filename=source.filename,
-            sha256=hashlib.sha256(body).hexdigest(),
-            size=len(body),
-        )
-
-    assert last_error is not None
-    raise last_error
-
-
-def _from_disk(source: Source, path: Path) -> FetchResult | None:
-    if not path.is_file():
-        return None
-    body = path.read_bytes()
-    if not body.startswith(PDF_MAGIC):
-        return None
+def _result(source: Source, body: bytes) -> FetchResult:
     return FetchResult(
         key=source.key,
         url=source.url,
@@ -153,27 +123,80 @@ def _from_disk(source: Source, path: Path) -> FetchResult | None:
     )
 
 
+def _write_atomically(path: Path, body: bytes) -> None:
+    """A killed process must not leave a truncated file that still starts with %PDF."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    partial = path.with_name(path.name + ".part")
+    partial.write_bytes(body)
+    os.replace(partial, path)
+
+
+def download(
+    source: Source,
+    dest_dir: Path,
+    *,
+    expected_sha256: str | None = None,
+    opener: Opener = _urlopen,
+    sleep: Callable[[float], None] = time.sleep,
+) -> FetchResult:
+    """Fetch one source into dest_dir, rejecting anything that is not the pinned PDF."""
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        try:
+            body = opener(source.url, TIMEOUT_SECONDS)
+            if not body.startswith(PDF_MAGIC):
+                raise NotAPdfError(
+                    f"{source.key}: expected a PDF from {source.url}, got {body[:40]!r}"
+                )
+        except Exception as error:
+            if not _is_retryable(error) or attempt == MAX_ATTEMPTS:
+                raise
+            sleep(BACKOFF_SECONDS * attempt)
+            continue
+
+        result = _result(source, body)
+        if expected_sha256 is not None and result.sha256 != expected_sha256:
+            raise PinMismatchError(
+                f"{source.key}: got sha256 {result.sha256[:12]}, pinned {expected_sha256[:12]}"
+            )
+        _write_atomically(dest_dir / source.filename, body)
+        return result
+    raise AssertionError("unreachable: the last attempt either returns or raises")
+
+
+def _from_disk(source: Source, path: Path) -> FetchResult | None:
+    if not path.is_file():
+        return None
+    body = path.read_bytes()
+    return _result(source, body) if body.startswith(PDF_MAGIC) else None
+
+
 def fetch_all(
     sources: Iterable[Source],
     raw_dir: Path,
     *,
+    pins: Mapping[str, str] | None = None,
     opener: Opener = _urlopen,
     sleep: Callable[[float], None] = time.sleep,
 ) -> tuple[list[FetchResult], dict[str, Exception]]:
     """Fetch every source not already on disk; one dead host does not block the rest.
 
     Skipping valid files makes a rerun cheap after a partial failure, which matters here:
-    IndiaCode can stay down for hours while PRS and the CAPT table are fine.
+    IndiaCode can stay down for hours while PRS and the CAPT table are fine. A file on
+    disk is reused only if it matches its pin; anything fetched must match it too.
     """
+    pins = pins or {}
     results: list[FetchResult] = []
     failures: dict[str, Exception] = {}
     for source in sources:
+        pin = pins.get(source.key)
         cached = _from_disk(source, raw_dir / source.filename)
-        if cached is not None:
+        if cached is not None and (pin is None or cached.sha256 == pin):
             results.append(cached)
             continue
         try:
-            results.append(download(source, raw_dir, opener=opener, sleep=sleep))
+            results.append(
+                download(source, raw_dir, expected_sha256=pin, opener=opener, sleep=sleep)
+            )
         except Exception as error:
             failures[source.key] = error
     return results, failures
@@ -186,9 +209,29 @@ def write_manifest(results: Iterable[FetchResult], path: Path) -> None:
     path.write_text(json.dumps(entries, indent=2) + "\n", encoding="utf-8")
 
 
+def load_pins(path: Path) -> dict[str, str]:
+    """Committed SHA-256 per source key; empty before the first fetch."""
+    if not path.is_file():
+        return {}
+    return {e["key"]: e["sha256"] for e in json.loads(path.read_text(encoding="utf-8"))}
+
+
+def merge_manifest(results: Iterable[FetchResult], path: Path) -> None:
+    """Update the manifest with these results, keeping entries for sources not fetched.
+
+    Rewriting it from this run alone would drop the pin of any source whose host was
+    down, and the next run would then accept whatever that host served.
+    """
+    existing = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else []
+    merged = {e["key"]: FetchResult(**e) for e in existing} | {r.key: r for r in results}
+    write_manifest(merged.values(), path)
+
+
 def main(data_dir: Path = Path("data")) -> None:  # pragma: no cover - network entry point
-    results, failures = fetch_all(SOURCES, data_dir / "raw")
-    write_manifest(results, data_dir / "sources.json")
+    manifest = data_dir / "sources.json"
+    pins = {} if "--repin" in sys.argv else load_pins(manifest)
+    results, failures = fetch_all(SOURCES, data_dir / "raw", pins=pins)
+    merge_manifest(results, manifest)
     for r in results:
         print(f"{r.key:22} {r.size:>10,} bytes  {r.sha256[:12]}")
     for key, error in failures.items():

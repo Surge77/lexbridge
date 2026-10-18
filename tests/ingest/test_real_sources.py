@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from lexbridge.ingest.fetch import SOURCES, fetch_all
+from lexbridge.ingest.fetch import SOURCES, fetch_all, load_pins
 from lexbridge.ingest.layout import read_lines
 from lexbridge.ingest.split_bns import split_bns
 from lexbridge.ingest.split_consolidated import split_consolidated
@@ -21,7 +21,8 @@ from lexbridge.schema import Act, Section, Status, section_key
 
 pytestmark = pytest.mark.integration
 
-RAW = Path(__file__).resolve().parents[2] / "data" / "raw"
+DATA = Path(__file__).resolve().parents[2] / "data"
+RAW = DATA / "raw"
 # Inserted by the Criminal Law (Amendment) Acts of 2013 and 2018. Their absence means
 # the source predates them, whatever the section count says.
 IPC_LATE_INSERTS = ("166A", "354A", "354B", "354C", "354D", "376DB")
@@ -29,7 +30,8 @@ IPC_LATE_INSERTS = ("166A", "354A", "354B", "354C", "354D", "376DB")
 
 @pytest.fixture(scope="module")
 def raw_dir() -> Path:
-    _, failures = fetch_all(SOURCES, RAW)
+    # Verified against the committed pins: CI's cache must hold exactly those bytes.
+    _, failures = fetch_all(SOURCES, RAW, pins=load_pins(DATA / "sources.json"))
     if failures:
         pytest.fail(f"could not fetch: {sorted(failures)}")
     return RAW
