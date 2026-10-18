@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from lexbridge.ingest.graph import Edge, Relation, build_edges, cross_references
+from lexbridge.ingest.graph import Edge, Relation, build_edges
 from lexbridge.ingest.mapping import Correspondence
 from lexbridge.schema import Act, Section, Status
 
@@ -13,19 +13,6 @@ def section(act: Act, number: str, text: str = "", status: Status = Status.IN_FO
 def row(bns: str, sub: str, *ipc: str) -> Correspondence:
     return Correspondence(bns_section=bns, bns_sub=sub, ipc=ipc, subject="", summary="",
                           page=1)
-
-
-def test_cross_references_find_section_mentions_in_the_same_code() -> None:
-    text = "as defined in section 2, or under sections 115 and 117, or section 498A"
-
-    assert cross_references(text) == ("2", "115", "117", "498A")
-
-
-def test_cross_references_ignore_other_acts_and_sub_section_mentions() -> None:
-    text = ("in accordance with section 474 of the Bharatiya Nagarik Suraksha Sanhita, "
-            "2023, or sub-section (2), or section 5")
-
-    assert cross_references(text) == ("5",)
 
 
 def test_edges_cover_replacement_new_provisions_and_unmapped_sections() -> None:

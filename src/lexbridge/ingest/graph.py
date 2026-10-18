@@ -6,22 +6,13 @@ is enough and a graph database would be a dependency with no job.
 
 from __future__ import annotations
 
-import re
 from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import StrEnum
 
 from lexbridge.ingest.mapping import Correspondence
+from lexbridge.ingest.xref import cross_references
 from lexbridge.schema import Section, Status, section_key
-
-# "section 2", "sections 115 and 117", "section 498A". A mention followed by "of the
-# <other Act>" points outside this code and is skipped; "sub-section (2)" never matches
-# because it has no number directly after the word.
-NUMBER = re.compile(r"\d{1,3}[A-Z]{0,3}")
-MENTION = re.compile(
-    rf"\bsections?\s+((?:{NUMBER.pattern})(?:\s*(?:,|and|or)\s*{NUMBER.pattern})*)"
-)
-OTHER_ACT = re.compile(r"\s*,?\s*of the\s+(?!(?:said\s+)?(?:Code|Sanhita)\b)[A-Z]")
 
 
 class Relation(StrEnum):
@@ -40,26 +31,19 @@ class Edge:
     dst: str
     relation: Relation
     # The BNS sub-section the IPC provision landed in, e.g. "(4)" for IPC 420 -> BNS 318.
+    # Edges are section-level on the IPC side: "23 Clause-1" and "498A Explanation" are
+    # recorded as IPC 23 and IPC 498A, so no answer may claim a clause-level mapping.
     detail: str
-
-
-def cross_references(text: str) -> tuple[str, ...]:
-    """Section numbers of the same code mentioned in a text, in order of appearance."""
-    found: list[str] = []
-    for mention in MENTION.finditer(text):
-        if OTHER_ACT.match(text, mention.end()):
-            continue
-        found.extend(NUMBER.findall(mention.group(1)))
-    return tuple(dict.fromkeys(found))
 
 
 def _references(sections: Iterable[Section]) -> list[Edge]:
     sections = list(sections)
-    known = {s.number for s in sections}
+    numbers = [s.number for s in sections]
+    known = set(numbers)
     return [
         Edge(s.id, f"{s.act}:{n}", Relation.REFERS_TO, "")
         for s in sections
-        for n in cross_references(s.text)
+        for n in cross_references(s.text, s.act, numbers)
         if n in known and n != s.number
     ]
 
