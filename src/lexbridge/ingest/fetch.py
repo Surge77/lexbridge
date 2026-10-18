@@ -27,6 +27,7 @@ TIMEOUT_SECONDS = 90.0
 PDF_MAGIC = b"%PDF"
 # Some government hosts reject the default Python-urllib agent outright.
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) lexbridge/0.1 (+research)"
+INDIACODE_CONTENT = "https://indiacode.gov.in/server/api/core/bitstreams"
 
 
 class NotAPdfError(ValueError):
@@ -57,16 +58,21 @@ SOURCES: tuple[Source, ...] = (
         "The%20Bharatiya%20Nyaya%20Sanhita,%202023.pdf",
         filename="bns_original.pdf",
     ),
-    # Consolidated text as maintained by IndiaCode, amendments included.
+    # IndiaCode moved to indiacode.gov.in (DSpace 7) in 2026; the old nic.in bitstream
+    # paths now return the web app's HTML. Files are addressed by bitstream UUID through
+    # the REST API.
+    # Consolidated BNS, "[As on the 6th October, 2025]", amendments included.
     Source(
         key="bns_current",
-        url="https://www.indiacode.nic.in/bitstream/123456789/20062/1/a202345.pdf",
+        url=f"{INDIACODE_CONTENT}/8007a80e-259b-429d-9ca4-1a2f474b5000/content",
         filename="bns_current.pdf",
     ),
+    # The IPC as it stood when repealed: includes the 2013 and 2018 amendments (354A-D,
+    # 376DB, 166A). IndiaCode's older handle 4219 is a pre-2013 consolidation and must
+    # not be used — it would answer pre-July-2024 questions with superseded law.
     Source(
         key="ipc",
-        url="https://www.indiacode.nic.in/bitstream/123456789/4219/1/"
-        "THE-INDIAN-PENAL-CODE-1860.pdf",
+        url=f"{INDIACODE_CONTENT}/337c7a03-60c6-4953-8dd6-90e65c343629/content",
         filename="ipc.pdf",
     ),
     # BNS-to-IPC correspondence table, CAPT Bhopal (a BPR&D police training academy).
