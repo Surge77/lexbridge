@@ -119,3 +119,35 @@ def test_a_data_row_whose_bns_reference_cannot_be_read_is_an_error() -> None:
 
     with pytest.raises(MappingParseError, match="BNS reference"):
         correspondences(rows)
+
+
+@pytest.mark.parametrize("cell", ["232 to 230", "5 to 600", ", ,"])
+def test_reversed_huge_or_empty_ranges_and_lists_are_errors(cell: str) -> None:
+    # "232 to 230" once came back as (), which reads as "new in BNS": wrong law, no error.
+    with pytest.raises(MappingParseError):
+        parse_ipc_cell(cell)
+
+
+def test_a_row_of_unexpected_width_is_an_error() -> None:
+    rows = [(5, ["40", "Something", "No change."])]
+
+    with pytest.raises(MappingParseError, match="3 cells"):
+        correspondences(rows)
+
+
+def test_the_bns_2_definitions_note_is_the_one_tolerated_three_cell_row() -> None:
+    rows = [(1, ["2", "Definitions.", "In the IPC, definitions are not consolidated."])]
+
+    assert correspondences(rows) == []
+
+
+def test_a_lone_number_is_never_taken_as_summary_text() -> None:
+    rows = [(11, ["94", "Concealment of birth.", "318", "No change."]), (11, ["319"])]
+
+    with pytest.raises(MappingParseError, match="lone"):
+        correspondences(rows)
+
+
+def test_a_table_citing_a_bns_section_that_was_not_parsed_is_an_error() -> None:
+    with pytest.raises(MappingParseError, match="BNS sections cited but not parsed: 94"):
+        require_consistent(correspondences(ROWS[2:]), bns={"95", "103"}, ipc={"318"})

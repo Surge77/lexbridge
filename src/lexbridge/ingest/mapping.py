@@ -34,9 +34,19 @@ BNS_REF = re.compile(r"(\d{1,3})\s*((?:\(\d+\)\s*[,/]?\s*)*)(?:\(?([a-z])\)?)?")
 SUB = re.compile(r"\(\d+\)")
 # Page 4 maps IPC 55A to "Explanati on to section 5" (the space is in the table).
 EXPLANATION_REF = re.compile(rf"{EXPLANATION} to section (\d{{1,3}})")
+HEADER_CELL = "BNS"
 # The one data row with three cells is BNS 2's note that the IPC spreads its
 # definitions over sections 8-52A; its sub-sections are mapped one by one below it.
-HEADER_CELL = "BNS"
+DEFINITIONS_NOTE_SECTION = "2"
+DATA_ROW_CELLS = 4
+# The widest range in the table spans 5 sections ("237 to 241"). A far wider one is a
+# misread, not a mapping, and would flood the graph with false edges.
+MAX_RANGE_SPAN = 20
+# A wrapped summary line is prose. A one-cell row of bare numbers is an IPC cell that
+# lost its row, and folding it into the summary would hide a mapping.
+LONE_NUMBERS = re.compile(r"(?=.*\d)[\d\sA-Z,&/()-]+")
+# Page 1's column headings, broken across lines by the PDF ("IPC / Sections").
+HEADER_FRAGMENTS = frozenset({"Sections/", "Subsecti", "ons", "PC", "ections"})
 
 
 class MappingParseError(ValueError):
@@ -68,12 +78,17 @@ def parse_ipc_cell(cell: str) -> tuple[str, ...]:
             continue  # "228A (1)/(2)": the "(2)" refers back to 228A.
         if span := RANGE.fullmatch(token):
             first, last = int(span.group(1)), int(span.group(2))
+            if not 0 < last - first <= MAX_RANGE_SPAN:
+                raise MappingParseError(f"implausible IPC range {token!r} in {cell!r}")
             numbers.extend(str(n) for n in range(first, last + 1))
             continue
         found = IPC_TOKEN.fullmatch(token)
         if not found:
             raise MappingParseError(f"unrecognised IPC reference {token!r} in {cell!r}")
         numbers.append(found.group(1) + (found.group(2) or ""))
+    if not numbers:
+        # () means "new in BNS"; a cell that only looked like a list must not mean that.
+        raise MappingParseError(f"no IPC section in {cell!r}")
     return tuple(dict.fromkeys(numbers))  # "376(1) & 376(2)" names 376 once
 
 
@@ -92,15 +107,23 @@ def correspondences(rows: Iterable[tuple[int, list[str]]]) -> list[Correspondenc
     """Rows as (page, non-empty cells). One-cell rows continue the previous summary."""
     out: list[Correspondence] = []
     for page, cells in rows:
+        if len(cells) == 1 and cells[0] in HEADER_FRAGMENTS:
+            continue
         if len(cells) == 1 and out:
+            if LONE_NUMBERS.fullmatch(cells[0]):
+                raise MappingParseError(f"lone IPC-like cell {cells[0]!r} on page {page}")
             last = out[-1]
             out[-1] = Correspondence(
                 last.bns_section, last.bns_sub, last.ipc, last.subject,
                 f"{last.summary} {cells[0]}", last.page,
             )
             continue
-        if len(cells) != 4 or cells[0] == HEADER_CELL:
+        if len(cells) == 1 or cells[0] == HEADER_CELL:
+            continue  # header fragments ("Sections/", "Subsecti") before the first row
+        if len(cells) == DATA_ROW_CELLS - 1 and cells[0] == DEFINITIONS_NOTE_SECTION:
             continue
+        if len(cells) != DATA_ROW_CELLS:
+            raise MappingParseError(f"row with {len(cells)} cells on page {page}: {cells[:2]}")
         ref = parse_bns_ref(cells[0])
         if ref is None:
             # Skipping it once lost IPC 506 -> BNS 351 ("351 (2)/ (3)") without a trace.
@@ -142,6 +165,9 @@ def require_consistent(
     unmentioned = sorted(bns - {c.bns_section for c in found}, key=_numeric)
     if unmentioned:
         raise MappingParseError(f"BNS sections not in the table: {', '.join(unmentioned)}")
+    phantom = sorted({c.bns_section for c in found} - bns, key=_numeric)
+    if phantom:
+        raise MappingParseError(f"BNS sections cited but not parsed: {', '.join(phantom)}")
     unparsed = sorted({n for c in found for n in c.ipc} - ipc, key=_numeric)
     if unparsed:
         raise MappingParseError(f"IPC sections cited but not parsed: {', '.join(unparsed)}")
