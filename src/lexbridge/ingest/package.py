@@ -39,6 +39,9 @@ def write_bundle(
     edges: Iterable[Edge],
     pins: Mapping[str, str],
 ) -> Path:
+    if out_dir.exists() and any(out_dir.iterdir()):
+        # Stale files would sit beside a manifest that does not list them.
+        raise FileExistsError(f"{out_dir} is not empty; build each version into a new directory")
     out_dir.mkdir(parents=True, exist_ok=True)
     sections = sorted(
         (s for found in corpus.values() for s in found),
