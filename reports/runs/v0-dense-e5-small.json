@@ -1,14 +1,14 @@
 {
   "name": "v0-dense-e5-small",
   "retriever": "dense",
-  "embedder": "e5-small@614241f6",
+  "embedder": "e5-small@614241f6.edf768",
   "parameters": 117653760,
-  "index_seconds": 50.9,
+  "index_seconds": 42.8,
   "bundle_sections_sha256": "dbe1705d398839a90e724f63494c24dddb023e0b8ea82c14840382dea202ba5f",
   "golden_sha256": "7215b78215ff27dac69275e2e21ff2f2a69752e8f0d8acebc40c46427ff2f9a4",
   "query_ms": {
-    "p50": 13.3,
-    "p95": 18.4
+    "p50": 12.53,
+    "p95": 15.98
   },
   "scores": {
     "boundary": {
@@ -76,12 +76,12 @@
       "wrong_regime@1": 0.25
     },
     "macro": {
-      "n": 1466,
-      "hit@1": 0.242,
-      "hit@5": 0.3904,
-      "hit@10": 0.473,
-      "mrr": 0.314,
-      "wrong_regime@1": 0.1529
+      "n": 584,
+      "hit@1": 0.3221,
+      "hit@5": 0.5167,
+      "hit@10": 0.6242,
+      "mrr": 0.4167,
+      "wrong_regime@1": 0.1863
     }
   },
   "ranks": {

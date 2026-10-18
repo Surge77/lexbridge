@@ -1,14 +1,14 @@
 {
   "name": "v0-dense-bge-m3",
   "retriever": "dense",
-  "embedder": "bge-m3@5617a9f6",
+  "embedder": "bge-m3@5617a9f6.15abf2",
   "parameters": 567754752,
-  "index_seconds": 1173.6,
+  "index_seconds": 518.5,
   "bundle_sections_sha256": "dbe1705d398839a90e724f63494c24dddb023e0b8ea82c14840382dea202ba5f",
   "golden_sha256": "7215b78215ff27dac69275e2e21ff2f2a69752e8f0d8acebc40c46427ff2f9a4",
   "query_ms": {
-    "p50": 112.29,
-    "p95": 162.52
+    "p50": 110.47,
+    "p95": 147.22
   },
   "scores": {
     "boundary": {
@@ -76,12 +76,12 @@
       "wrong_regime@1": 0.5
     },
     "macro": {
-      "n": 1466,
-      "hit@1": 0.277,
-      "hit@5": 0.4843,
-      "hit@10": 0.5904,
-      "mrr": 0.3714,
-      "wrong_regime@1": 0.1946
+      "n": 584,
+      "hit@1": 0.3687,
+      "hit@5": 0.6431,
+      "hit@10": 0.7813,
+      "mrr": 0.4934,
+      "wrong_regime@1": 0.2557
     }
   },
   "ranks": {

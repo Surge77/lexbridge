@@ -12,12 +12,16 @@ on an otherwise idle machine. Full results are in `reports/ablation.md`.
 | | multilingual-e5-small | bge-m3 |
 |---|---:|---:|
 | Parameters | 118M | 568M |
-| hit@5, macro | 39.0 | **48.4** |
-| hit@10, macro | 47.3 | **59.0** |
-| MRR, macro | 31.4 | **37.1** |
+| hit@5, macro over text categories | 51.7 | **64.3** |
+| hit@10, macro | 62.4 | **78.1** |
+| MRR, macro | 41.7 | **49.3** |
 | hit@5: lay / Hindi / boundary / tricky | 39 / 20 / 50 / 25 | **54 / 30 / 67 / 50** |
-| Query latency, p50 / p95 | **13 / 18 ms** | 112 / 163 ms |
-| Index build, 939 sections | **51 s** | 1,174 s |
+| Query latency, p50 / p95 (sampled across every category) | **13 / 16 ms** | 110 / 147 ms |
+| Index build, 939 sections | **43 s** | 519 s |
+
+The macro averages the six text-retrieval categories. The two map-lookup categories are
+graph lookups that neither model can answer (about 1% hit@5). They are reported
+separately.
 
 The hand-written categories are small (6 to 28 cases each), so the per-category gaps
 come down to a few questions. The paired view settles it. On the 52 hand-written
@@ -32,7 +36,7 @@ registry key in `lexbridge/retrieve/embed.py` is the only switch.
 ## Consequences
 - A query costs about 110 ms on CPU instead of 13 ms. The answer will wait about a
   second on an LLM call anyway, so the gap is affordable.
-- The index takes about 20 minutes to build. It is built once per bundle and cached
+- The index takes about 9 minutes to build. It is built once per bundle and cached
   under a key of model commit plus section-text hash. For deployment the vectors are
   baked into the image, so a running server never builds them.
 - About 2.3 GB of fp32 weights at runtime. That fits a free Hugging Face CPU Space
@@ -42,8 +46,8 @@ registry key in `lexbridge/retrieve/embed.py` is the only switch.
   pin to a new commit means re-checking that.
 - Neither model solves the two failures the baseline exposes. Map lookups ("IPC 420 is
   now which section?") score about 1% hit@5, because a vector carries no usable notion of a section
-  number. On dated questions, 20% of first results are the right provision from the
+  number. On dated questions, about a quarter of first results are the right provision from the
   wrong code. Those are P4's jobs: the graph shortcut and the date router.
-- bge-m3's higher wrong-regime@1 (19.5 vs 15.3) is not a regression in disguise. It finds
+- bge-m3's higher wrong-regime@1 (25.6 vs 18.6) is not a regression in disguise. It finds
   the concept more often, and an IPC section and its BNS successor share most of their
   wording, so it lands on the twin more often too.
