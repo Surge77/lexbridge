@@ -17,16 +17,26 @@ from pathlib import Path
 
 import pdfplumber
 
-NO_COUNTERPART = re.compile(r"(?i)new(\s*sub-?\s*section)?|-")
+NEW_PROVISION = re.compile(r"(?i)new(\s*sub-?\s*section)?|-")
 SEPARATORS = re.compile(r"\s*(?:,|&|/|\band\b)\s*")
 RANGE = re.compile(r"(\d{1,3})\s+to\s+(\d{1,3})")
 # A section number, then any sub-reference the table adds ("(1)", "Clause-1",
 # "Explanation"); "171-I" is how the table writes section 171I.
+# The table's PDF breaks "Explanation" at arbitrary points: "Explanat ion", "Explanati on".
+EXPLANATION = r"Explana\s*t\s*i\s*o\s*n"
 IPC_TOKEN = re.compile(
-    r"(\d{1,3})(?:-?([A-Z]{1,3}))?\s*(?:\(\d+\)|Clause-\d+|Explanat\s*ion)?"
+    rf"(\d{{1,3}})(?:-?([A-Z]{{1,3}}))?\s*(?:\(\d+\)|Clause-\d+|{EXPLANATION})?"
 )
 SUB_ONLY = re.compile(r"\(\d+\)")
-BNS_REF = re.compile(r"(\d{1,3})\s*((?:\(\d+\))*)\s*\(?([a-z])?\)?")
+# "103 (2)", "197 (1)d", and several sub-sections at once: "309 (1), (2), (3)",
+# "351 (2)/ (3)".
+BNS_REF = re.compile(r"(\d{1,3})\s*((?:\(\d+\)\s*[,/]?\s*)*)(?:\(?([a-z])\)?)?")
+SUB = re.compile(r"\(\d+\)")
+# Page 4 maps IPC 55A to "Explanati on to section 5" (the space is in the table).
+EXPLANATION_REF = re.compile(rf"{EXPLANATION} to section (\d{{1,3}})")
+# The one data row with three cells is BNS 2's note that the IPC spreads its
+# definitions over sections 8-52A; its sub-sections are mapped one by one below it.
+HEADER_CELL = "BNS"
 
 
 class MappingParseError(ValueError):
@@ -48,7 +58,7 @@ def parse_ipc_cell(cell: str) -> tuple[str, ...]:
     text = cell.strip()
     if not text:
         raise MappingParseError("empty IPC cell")
-    if NO_COUNTERPART.fullmatch(text):
+    if NEW_PROVISION.fullmatch(text):
         return ()
     numbers: list[str] = []
     for token in SEPARATORS.split(text):
@@ -69,11 +79,13 @@ def parse_ipc_cell(cell: str) -> tuple[str, ...]:
 
 def parse_bns_ref(cell: str) -> tuple[str, str] | None:
     """("103", "(2)") for "103 (2)"; None for header fragments and wrapped text."""
+    if explanation := EXPLANATION_REF.fullmatch(cell.strip()):
+        return explanation.group(1), "Explanation"
     found = BNS_REF.fullmatch(cell.strip())
     if not found:
         return None
     clause = f"({found.group(3)})" if found.group(3) else ""
-    return found.group(1), found.group(2) + clause
+    return found.group(1), "/".join(SUB.findall(found.group(2))) + clause
 
 
 def correspondences(rows: Iterable[tuple[int, list[str]]]) -> list[Correspondence]:
@@ -87,9 +99,12 @@ def correspondences(rows: Iterable[tuple[int, list[str]]]) -> list[Correspondenc
                 f"{last.summary} {cells[0]}", last.page,
             )
             continue
-        ref = parse_bns_ref(cells[0]) if len(cells) == 4 else None
-        if ref is None:
+        if len(cells) != 4 or cells[0] == HEADER_CELL:
             continue
+        ref = parse_bns_ref(cells[0])
+        if ref is None:
+            # Skipping it once lost IPC 506 -> BNS 351 ("351 (2)/ (3)") without a trace.
+            raise MappingParseError(f"unreadable BNS reference {cells[0]!r} on page {page}")
         out.append(
             Correspondence(
                 bns_section=ref[0],

@@ -55,6 +55,10 @@ def test_an_unrecognised_cell_is_an_error_not_a_silent_drop(cell: str) -> None:
         ("103 (2)", ("103", "(2)")),
         ("197 (1)d", ("197", "(1)(d)")),
         ("2(36)", ("2", "(36)")),
+        ("309 (1), (2), (3)", ("309", "(1)/(2)/(3)")),
+        ("351 (2)/ (3)", ("351", "(2)/(3)")),
+        ("189 (8)/ (9)", ("189", "(8)/(9)")),
+        ("Explanati on to section 5", ("5", "Explanation")),
     ],
 )
 def test_bns_references_split_into_section_and_subsection(
@@ -107,3 +111,11 @@ def test_an_ipc_section_cited_but_absent_from_the_corpus_is_an_error() -> None:
     # How 171I and 376C were found missing from the IPC split.
     with pytest.raises(MappingParseError, match="IPC sections cited but not parsed: 318"):
         require_consistent(correspondences(ROWS[2:]), bns={"94", "95", "103"}, ipc=set())
+
+
+def test_a_data_row_whose_bns_reference_cannot_be_read_is_an_error() -> None:
+    # Rows like "351 (2)/ (3)" were once skipped silently, losing IPC 506 -> BNS 351.
+    rows = [(37, ["351 (2) or so", "Criminal intimidation punishment.", "506", "Ditto."])]
+
+    with pytest.raises(MappingParseError, match="BNS reference"):
+        correspondences(rows)
