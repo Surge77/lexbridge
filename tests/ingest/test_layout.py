@@ -6,7 +6,7 @@ import pytest
 
 from lexbridge.ingest.layout import read_lines
 
-from .pdf_factory import Text, write_pdf
+from .pdf_factory import Rule, Text, write_pdf
 
 
 @pytest.fixture
@@ -91,3 +91,29 @@ def test_a_superscript_marker_does_not_set_the_line_size(tmp_path: Path) -> None
     (line,) = read_lines(pdf)
 
     assert line.size == pytest.approx(11)
+
+
+def test_text_below_the_footnote_rule_is_dropped(tmp_path: Path) -> None:
+    # IndiaCode draws a short rule at x 72-216 above each page's footnotes. On page 109
+    # of the IPC the body and footnotes are both 8pt, so size cannot tell them apart.
+    pdf = write_pdf(tmp_path / "f.pdf", [[
+        Text(72, 700, 8, "465. Punishment for forgery.--Whoever commits forgery"),
+        Rule(72, 216, 728),
+        Text(72, 734, 8, "1. Ins. by Act 21 of 2000, s. 91."),
+        Text(300, 781, 11, "109"),
+    ]])
+
+    lines = read_lines(pdf, footnote_rule=True)
+
+    assert [line.text for line in lines] == [
+        "465. Punishment for forgery.--Whoever commits forgery"
+    ]
+
+
+def test_a_full_width_rule_is_not_mistaken_for_the_footnote_rule(tmp_path: Path) -> None:
+    pdf = write_pdf(tmp_path / "g.pdf", [[
+        Rule(72, 523, 100),
+        Text(72, 120, 11, "1. First.--Text."),
+    ]])
+
+    assert [line.text for line in read_lines(pdf, footnote_rule=True)] == ["1. First.--Text."]

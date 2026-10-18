@@ -23,13 +23,26 @@ class Text:
     text: str
 
 
+@dataclass(frozen=True)
+class Rule:
+    """A horizontal line, like the short rule above a page's footnotes."""
+
+    x0: float
+    x1: float
+    top: float
+
+
 def _escape(text: str) -> str:
     return text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
 
 
-def _content(texts: list[Text]) -> bytes:
+def _content(items: list[Text | Rule]) -> bytes:
     ops = []
-    for t in texts:
+    for t in items:
+        if isinstance(t, Rule):
+            y = PAGE_HEIGHT - t.top
+            ops.append(f"0.5 w {t.x0} {y} m {t.x1} {y} l S")
+            continue
         # PDF y runs upward from the bottom, and pdfplumber's `top` is the top of the
         # glyph box: the baseline sits one ascender below it (Helvetica: 718/1000 em).
         baseline = PAGE_HEIGHT - t.top - HELVETICA_ASCENT * t.size
@@ -37,7 +50,7 @@ def _content(texts: list[Text]) -> bytes:
     return "\n".join(ops).encode("latin-1")
 
 
-def write_pdf(path: Path, pages: list[list[Text]]) -> Path:
+def write_pdf(path: Path, pages: list[list[Text | Rule]]) -> Path:
     objects: list[bytes] = []
     page_ids = [4 + 2 * i for i in range(len(pages))]
     kids = " ".join(f"{pid} 0 R" for pid in page_ids)
