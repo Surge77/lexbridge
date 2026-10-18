@@ -67,3 +67,9 @@ def test_cached_vectors_are_reused_for_the_same_model_and_text(
 def test_ids_and_vectors_must_line_up() -> None:
     with pytest.raises(ValueError, match="2 ids for 1 vectors"):
         DenseIndex(["IPC:1", "IPC:2"], np.zeros((1, 4), dtype=np.float32), WordsEmbedder())
+
+
+def test_a_cache_write_leaves_no_partial_file(bundle: Bundle, tmp_path: Path) -> None:
+    DenseIndex.build(bundle, WordsEmbedder(), cache_dir=tmp_path / "cache")
+
+    assert [p.suffix for p in (tmp_path / "cache").iterdir()] == [".npy"]

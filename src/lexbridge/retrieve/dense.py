@@ -28,7 +28,7 @@ class DenseIndex:
     def build(cls, bundle: Bundle, embedder: Embedder, cache_dir: Path | None = None
               ) -> DenseIndex:
         ids = [s.id for s in bundle.sections]
-        # Keyed on the weights and the exact section text: vectors are valid for nothing else.
+        # Keyed on the model and settings (its name) and the exact section text.
         key = f"{_slug(embedder.name)}-{bundle.sections_sha256[:12]}"
         cache = cache_dir / f"{key}.npy" if cache_dir else None
         if cache and cache.exists():
@@ -36,7 +36,12 @@ class DenseIndex:
         vectors = embedder.embed_documents([s.text for s in bundle.sections])
         if cache:
             cache.parent.mkdir(parents=True, exist_ok=True)
-            np.save(cache, vectors)
+            # Written aside and renamed: an interrupted run must not leave a truncated file
+            # that the next run would find and trust.
+            partial = cache.with_suffix(".partial")
+            with partial.open("wb") as f:
+                np.save(f, vectors)
+            partial.replace(cache)
         return cls(ids, vectors, embedder)
 
     def search_many(self, queries: Sequence[str], k: int) -> list[list[Hit]]:

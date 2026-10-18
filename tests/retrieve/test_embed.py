@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 import types
+from dataclasses import replace
 
 import numpy as np
 import pytest
@@ -54,7 +55,7 @@ def test_the_model_is_loaded_at_its_pinned_commit_on_cpu() -> None:
 
     assert model.loaded == ("BAAI/bge-m3", MODELS["bge-m3"].revision, "cpu")
     assert model.max_seq_length == 512
-    assert embedder.name == f"bge-m3@{MODELS['bge-m3'].revision[:8]}"
+    assert embedder.name.startswith(f"bge-m3@{MODELS['bge-m3'].revision[:8]}.")
     assert embedder.parameters == 15
 
 
@@ -74,3 +75,11 @@ def test_vectors_come_back_normalised_float32() -> None:
 
     assert vectors.dtype == np.float32
     assert model_of(embedder).options["normalize_embeddings"] is True
+
+
+def test_a_settings_change_changes_the_name_that_keys_cached_vectors(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    before = SentenceTransformerEmbedder("e5-small").name
+    monkeypatch.setitem(MODELS, "e5-small", replace(MODELS["e5-small"], max_tokens=8192))
+
+    assert SentenceTransformerEmbedder("e5-small").name != before

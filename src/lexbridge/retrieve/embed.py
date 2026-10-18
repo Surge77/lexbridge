@@ -6,8 +6,9 @@ deterministic fake without importing torch, and swapping models is a registry en
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import astuple, dataclass
 from typing import Protocol
 
 import numpy as np
@@ -19,7 +20,8 @@ Vectors = NDArray[np.float32]
 class Embedder(Protocol):
     @property
     def name(self) -> str:
-        """Identifies the exact weights, so cached vectors are never reused across models."""
+        """Identifies the weights and every setting that changes a vector, so cached
+        vectors are never reused after either changes."""
         ...
 
     def embed_documents(self, texts: Sequence[str]) -> Vectors: ...
@@ -54,7 +56,10 @@ class SentenceTransformerEmbedder:
         from sentence_transformers import SentenceTransformer
 
         self.spec = MODELS[key]
-        self._name = f"{key}@{self.spec.revision[:8]}"
+        # The revision names the weights; the settings hash covers prefixes and the token
+        # window, which change the vectors just as much.
+        settings = hashlib.sha256(repr(astuple(self.spec)).encode()).hexdigest()[:6]
+        self._name = f"{key}@{self.spec.revision[:8]}.{settings}"
         self._batch_size = batch_size
         self._model = SentenceTransformer(self.spec.repo, revision=self.spec.revision,
                                           device="cpu")
