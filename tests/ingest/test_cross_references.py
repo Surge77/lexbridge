@@ -21,6 +21,9 @@ KNOWN = ["8", "9", "52", "52A", "53", "255", "256", "263", "263A"]
         "section 2 of Motor Vehicles Act 1988",
         "section 3 and section 4 of the Arms Act",
         "sections 3 and 4 of the Arms Act",
+        "under section 197(1) of the Code of Criminal Procedure",
+        "section 41 (1) of the Code of Criminal Procedure",
+        "section 3, section 4 of the Arms Act",
     ],
 )
 def test_a_section_of_another_act_is_not_a_reference(text: str) -> None:

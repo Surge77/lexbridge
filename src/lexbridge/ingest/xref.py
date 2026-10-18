@@ -20,8 +20,13 @@ from lexbridge.schema import Act, section_key
 NUMBER = r"\d{1,3}[A-Z]{0,3}(?![\dA-Z])"
 JOIN = r"\s*,?\s*(?:and|or|to)\s+|\s*,\s*"
 MENTION = re.compile(rf"(?i:\bsections?)\s+({NUMBER}(?:(?:{JOIN}){NUMBER})*)")
-# "section 3 and section 4 of the Arms Act": both mentions belong to the Arms Act.
-CHAIN = re.compile(r"\s*,?\s*(?:and|or)\s+(?=(?i:sections?)\s+\d)")
+# Sub-references between a number and what follows: "section 197(1) of the Code ...".
+SUB_REFS = re.compile(r"(?:\s*\(\w+\))*")
+# "section 3 and section 4 of the Arms Act", "section 3, section 4 of ...": the mentions
+# share one fate.
+CHAIN = re.compile(
+    r"(?:\s*\(\w+\))*\s*(?:,\s*(?:and\s+|or\s+)?|(?:and|or)\s+)(?=(?i:sections?)\s+\d)"
+)
 OF = re.compile(r"\s*,?\s*of\b")
 SAME_CODE = {
     Act.IPC: re.compile(r"\s*,?\s*of\s+(?:this\s+Code|(?:the\s+)?Indian\s+Penal\s+Code)\b"),
@@ -72,7 +77,7 @@ def cross_references(
         while i + 1 < len(mentions) and _chained(text, group[-1], mentions[i + 1]):
             i += 1
             group.append(mentions[i])
-        end = group[-1].end()
+        end = SUB_REFS.match(text, group[-1].end()).end()  # type: ignore[union-attr]
         foreign = OF.match(text, end) and not SAME_CODE[act].match(text, end)
         if not foreign:
             for mention in group:

@@ -151,3 +151,11 @@ def test_a_lone_number_is_never_taken_as_summary_text() -> None:
 def test_a_table_citing_a_bns_section_that_was_not_parsed_is_an_error() -> None:
     with pytest.raises(MappingParseError, match="BNS sections cited but not parsed: 94"):
         require_consistent(correspondences(ROWS[2:]), bns={"95", "103"}, ipc={"318"})
+
+
+@pytest.mark.parametrize("cell", ["103 and 104", "230 to 232", "319"])
+def test_a_one_cell_row_that_parses_as_an_ipc_list_is_an_error(cell: str) -> None:
+    rows = [(11, ["94", "Concealment of birth.", "318", "No change."]), (11, [cell])]
+
+    with pytest.raises(MappingParseError, match="lone"):
+        correspondences(rows)

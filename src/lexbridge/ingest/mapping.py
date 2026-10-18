@@ -42,9 +42,6 @@ DATA_ROW_CELLS = 4
 # The widest range in the table spans 5 sections ("237 to 241"). A far wider one is a
 # misread, not a mapping, and would flood the graph with false edges.
 MAX_RANGE_SPAN = 20
-# A wrapped summary line is prose. A one-cell row of bare numbers is an IPC cell that
-# lost its row, and folding it into the summary would hide a mapping.
-LONE_NUMBERS = re.compile(r"(?=.*\d)[\d\sA-Z,&/()-]+")
 # Page 1's column headings, broken across lines by the PDF ("IPC / Sections").
 HEADER_FRAGMENTS = frozenset({"Sections/", "Subsecti", "ons", "PC", "ections"})
 
@@ -103,6 +100,14 @@ def parse_bns_ref(cell: str) -> tuple[str, str] | None:
     return found.group(1), "/".join(SUB.findall(found.group(2))) + clause
 
 
+def _is_ipc_cell(text: str) -> bool:
+    try:
+        parse_ipc_cell(text)
+    except MappingParseError:
+        return False
+    return True
+
+
 def correspondences(rows: Iterable[tuple[int, list[str]]]) -> list[Correspondence]:
     """Rows as (page, non-empty cells). One-cell rows continue the previous summary."""
     out: list[Correspondence] = []
@@ -110,7 +115,9 @@ def correspondences(rows: Iterable[tuple[int, list[str]]]) -> list[Correspondenc
         if len(cells) == 1 and cells[0] in HEADER_FRAGMENTS:
             continue
         if len(cells) == 1 and out:
-            if LONE_NUMBERS.fullmatch(cells[0]):
+            # A wrapped summary line is prose. A one-cell row that parses as an IPC cell
+            # lost its row, and folding it into the summary would hide a mapping.
+            if _is_ipc_cell(cells[0]):
                 raise MappingParseError(f"lone IPC-like cell {cells[0]!r} on page {page}")
             last = out[-1]
             out[-1] = Correspondence(
