@@ -28,7 +28,9 @@ BUNDLE_FILES = ("sections.jsonl", "correspondences.jsonl", "edges.jsonl")
 
 def _jsonl(path: Path, records: Iterable[Mapping[str, object]]) -> None:
     lines = (json.dumps(r, ensure_ascii=False, sort_keys=True) for r in records)
-    path.write_text("".join(f"{line}\n" for line in lines), encoding="utf-8")
+    # newline="\n": Windows text mode writes CRLF, and the manifest hashes would then
+    # depend on the OS that built the bundle.
+    path.write_text("".join(f"{line}\n" for line in lines), encoding="utf-8", newline="\n")
 
 
 def write_bundle(
@@ -62,7 +64,7 @@ def write_bundle(
         },
     }
     (out_dir / "manifest.json").write_text(
-        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n"
     )
     return out_dir
 

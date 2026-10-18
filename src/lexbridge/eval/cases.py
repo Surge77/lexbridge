@@ -74,7 +74,7 @@ def case_id(category: Category, question: str) -> str:
 
 def write_cases(path: Path, cases: Iterable[Case]) -> None:
     lines = (json.dumps(c.model_dump(mode="json"), ensure_ascii=False) for c in cases)
-    path.write_text("".join(f"{line}\n" for line in lines), encoding="utf-8")
+    path.write_text("".join(f"{line}\n" for line in lines), encoding="utf-8", newline="\n")
 
 
 def read_cases(path: Path) -> list[Case]:

@@ -206,7 +206,7 @@ def write_manifest(results: Iterable[FetchResult], path: Path) -> None:
     """Record what was read, so a later build can prove it read the same bytes."""
     entries = sorted((asdict(r) for r in results), key=lambda e: e["key"])
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(entries, indent=2) + "\n", encoding="utf-8")
+    path.write_text(json.dumps(entries, indent=2) + "\n", encoding="utf-8", newline="\n")
 
 
 def load_pins(path: Path) -> dict[str, str]:
