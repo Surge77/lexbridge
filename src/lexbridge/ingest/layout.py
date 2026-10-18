@@ -6,6 +6,7 @@ each section's title in the margin beside it. Only geometry connects the two.
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -34,12 +35,15 @@ def read_lines(
     *,
     margin_width: float | None = None,
     skip_top: float = 0.0,
+    max_size: float | None = None,
 ) -> list[Line]:
     """Every non-blank line in reading order (page, then top to bottom).
 
     margin_width: strips of this width on both page edges are read as margin notes.
     None reads the whole page as body (the IPC typescript has no margin column).
     skip_top: drop everything above this line, e.g. the gazette's running header.
+    max_size: drop glyphs larger than this before lines are built. IndiaCode's
+    watermark letters (27-37pt) otherwise merge into body words: "contrardy".
     """
     lines: list[Line] = []
     with pdfplumber.open(path) as pdf:
@@ -50,6 +54,8 @@ def read_lines(
             # instead clipped the full stop of "Punishments." into the body line.
             def column_of(obj: dict, width: float = width) -> Column | None:
                 if obj["top"] < skip_top:
+                    return None
+                if max_size is not None and obj["size"] > max_size:
                     return None
                 if margin_width is None:
                     return "body"
@@ -71,9 +77,15 @@ def read_lines(
                             page=number,
                             top=float(raw["top"]),
                             x0=float(raw["x0"]),
-                            size=float(raw["chars"][0]["size"]),
+                            size=_dominant_size(raw["chars"]),
                             text=text,
                             column=column,
                         )
                     )
     return sorted(lines, key=lambda line: (line.page, line.top, line.x0))
+
+
+def _dominant_size(chars: list[dict]) -> float:
+    """The most common glyph size, so a 7pt superscript marker opening an 11pt body
+    line ("2[376DB.") does not make the line look like a 9pt footnote."""
+    return float(Counter(round(c["size"], 1) for c in chars).most_common(1)[0][0])

@@ -67,3 +67,27 @@ def test_lines_come_back_in_reading_order(gazette: Path) -> None:
 
     positions = [(line.page, line.top) for line in lines]
     assert positions == sorted(positions)
+
+
+def test_oversized_watermark_glyphs_are_dropped_before_lines_are_built(tmp_path: Path) -> None:
+    # IndiaCode stamps a vertical "India Code" in 27-37pt letters across the text column;
+    # left in, a stray "d" turns "contrary" into "contrardy".
+    pdf = write_pdf(tmp_path / "w.pdf", [[
+        Text(72, 300, 11, "acting contrary to law"),
+        Text(160, 296, 34, "d"),
+    ]])
+
+    lines = read_lines(pdf, max_size=20)
+
+    assert [line.text for line in lines] == ["acting contrary to law"]
+
+
+def test_a_superscript_marker_does_not_set_the_line_size(tmp_path: Path) -> None:
+    pdf = write_pdf(tmp_path / "m.pdf", [[
+        Text(90, 300, 7, "2"),
+        Text(94, 300, 11, "[376DB. Punishment for gang rape."),
+    ]])
+
+    (line,) = read_lines(pdf)
+
+    assert line.size == pytest.approx(11)
