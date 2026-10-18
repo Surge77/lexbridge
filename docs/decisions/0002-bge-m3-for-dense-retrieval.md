@@ -37,7 +37,7 @@ registry key in `lexbridge/retrieve/embed.py` is the only switch.
 - A query costs about 110 ms on CPU instead of 13 ms. The answer will wait about a
   second on an LLM call anyway, so the gap is affordable.
 - The index takes about 9 minutes to build. It is built once per bundle and cached
-  under a key of model commit plus section-text hash. For deployment the vectors are
+  under a key of model commit, model settings and section-text hash. For deployment the vectors are
   baked into the image, so a running server never builds them.
 - About 2.3 GB of fp32 weights at runtime. That fits a free Hugging Face CPU Space
   (16 GB). It does not fit a 512 MB container.
