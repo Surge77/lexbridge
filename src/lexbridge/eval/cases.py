@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from collections.abc import Iterable
 from datetime import date
@@ -63,6 +64,12 @@ class Case(BaseModel):
         elif self.needs_clarification == (self.answer_act is not None):
             raise ValueError(f"{self.id}: clarify exactly when the code is unknown")
         return self
+
+
+def case_id(category: Category, question: str) -> str:
+    # From the content, not a position, so a case keeps its id when the set is rebuilt
+    # and a per-case regression can be followed across runs.
+    return f"{category}-{hashlib.sha256(question.encode()).hexdigest()[:10]}"
 
 
 def write_cases(path: Path, cases: Iterable[Case]) -> None:
