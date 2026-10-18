@@ -33,12 +33,13 @@ def corpus() -> dict[str, list[Section]]:
     _, failures = fetch_all(SOURCES, raw, pins=load_pins(DATA / "sources.json"))
     if failures:
         pytest.fail(f"could not fetch: {sorted(failures)}")
-    return load_sections(raw)
+    return load_sections(raw, load_pins(DATA / "sources.json"))
 
 
 @pytest.mark.parametrize("key", ["bns_original", "bns_current", "ipc"])
 def test_every_section_has_a_title_and_text(corpus: dict[str, list[Section]], key: str) -> None:
-    untitled = [s.number for s in corpus[key] if not s.title or not s.text]
+    # strip(". "): a bracketed "[...]" title would otherwise come through as "..".
+    untitled = [s.number for s in corpus[key] if not s.title.strip(". ") or not s.text]
     assert untitled == []
 
 
