@@ -7,19 +7,13 @@ index would add a dependency and approximate answers to save microseconds.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 
 from lexbridge.bundle import Bundle
+from lexbridge.retrieve.base import Hit
 from lexbridge.retrieve.embed import Embedder, Vectors
-
-
-@dataclass(frozen=True)
-class Hit:
-    section_id: str
-    score: float
 
 
 class DenseIndex:
