@@ -1,0 +1,15 @@
+# Normalise line endings so contributors on Windows, macOS and Linux all
+# produce identical diffs. Without this, a Windows checkout rewrites every
+# line to CRLF and the next commit from another OS shows the whole file as
+# changed.
+* text=auto eol=lf
+
+# Notebooks are JSON. Diffing them line-by-line is noise, but they must not
+# be treated as binary either, or GitHub stops rendering them.
+*.ipynb text eol=lf
+
+# Genuinely binary — never touch these.
+*.png binary
+*.jpg binary
+*.joblib binary
+*.xlsx binary

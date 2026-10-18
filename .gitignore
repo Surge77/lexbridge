@@ -1,0 +1,23 @@
+# Downloaded statute PDFs are not committed. They are fetched from IndiaCode / PRS and
+# pinned by SHA-256 in data/sources.json, so a rebuild can prove it read the same bytes.
+data/raw/
+
+# Secrets. LLM API keys live in the environment, never in the tree.
+.env
+.env.*
+
+# Crash dumps from the Git Bash / msys shell on Windows.
+*.stackdump
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.ruff_cache/
+dist/
+*.egg-info/
