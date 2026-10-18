@@ -168,3 +168,15 @@ def test_a_stray_dash_straight_after_the_number_is_not_the_title_end() -> None:
     (section,) = split_consolidated(lines, act=Act.BNS, source_key="bns_current")
 
     assert section.title == "Public servant disobeying direction of law"
+
+
+def test_a_bare_number_inside_a_page_is_text_not_a_page_number() -> None:
+    lines = page(1, "1. Fine.—Shall be liable to a fine of rupees", "100", "or more.")
+
+    assert split(lines)["1"].text.splitlines()[1] == "100"
+
+
+def test_repealed_is_a_repeal_form_too() -> None:
+    lines = page(1, "1. First.—Text.", "2. [Old definition.] Repealed by Act 5 of 1950.")
+
+    assert split(lines)["2"].status is Status.REPEALED

@@ -51,16 +51,15 @@ def _title(draft: _Draft, next_draft: _Draft | None, notes: list[Line]) -> str:
     return " ".join(picked)
 
 
-def _end_of_text(lines: list[Line]) -> tuple[int, float]:
-    for line in lines:
-        if line.column == "body" and END_RULE.fullmatch(line.text):
-            return line.page, line.top
-    return (10**9, 0.0)
+def _before_end_rule(lines: list[Line]) -> list[Line]:
+    for rule in lines:
+        if rule.column == "body" and END_RULE.fullmatch(rule.text):
+            return [line for line in lines if (line.page, line.top) < (rule.page, rule.top)]
+    return lines
 
 
 def split_bns(lines: list[Line], *, source_key: str) -> list[Section]:
-    end = _end_of_text(lines)
-    lines = [line for line in lines if (line.page, line.top) < end]
+    lines = _before_end_rule(lines)
     notes = [
         replace(line, text=ACT_CITATION.sub("", line.text).strip())
         for line in lines

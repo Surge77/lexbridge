@@ -32,7 +32,7 @@ HEADING = re.compile(rf"(?:\d+\[{NUMBER}(?:\.\s*|\s+)|{NUMBER}\.\s*)(\S.*)")
 # The stop before the dash is sometimes missing: "to injury of another person—Whoever"
 # (BNS 217).
 TITLE_END = re.compile(rf"[.:]?\s*(?:{EM_DASH}|{EN_DASH}{{1,2}})")
-REPEALED = re.compile(r"\[(.+?)\.?\]\s*(?:Rep\.|Omitted)")
+REPEALED = re.compile(r"\[(.+?)\.?\]\s*(?:Rep\.|Repealed|Omitted)")
 CHAPTER = re.compile(r"(?:\d+\[)?CHAPTER ([IVXLC]+[A-Z]?)")
 # A title can run three lines before its ".—" (IPC 511).
 TITLE_LOOKAHEAD = 3
@@ -89,8 +89,15 @@ def _heading(body: list[Line], i: int, last: str | None) -> tuple[str, Status, s
     return None
 
 
+def _is_page_number(lines: list[Line], i: int) -> bool:
+    """A bare integer that is the last line on its page. Elsewhere it is text: a wrapped
+    line can legitimately be just "100"."""
+    last_on_page = i + 1 == len(lines) or lines[i + 1].page != lines[i].page
+    return last_on_page and bool(PAGE_NUMBER.fullmatch(lines[i].text))
+
+
 def split_consolidated(lines: list[Line], *, act: Act, source_key: str) -> list[Section]:
-    body = [line for line in lines if not PAGE_NUMBER.fullmatch(line.text)]
+    body = [line for i, line in enumerate(lines) if not _is_page_number(lines, i)]
     drafts: list[_Draft] = []
     chapter: str | None = None
     numeral: str | None = None
