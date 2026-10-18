@@ -13,10 +13,13 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from statistics import fmean
 
-from lexbridge.eval.cases import Case
+from lexbridge.eval.cases import Case, Category
 
 KS = (1, 5, 10)
 MACRO = "macro"
+# Answered from the graph, not by searching text: a text retriever scores ~0 on them by
+# construction, so averaging them in would depress every text-retrieval headline.
+GRAPH_LOOKUPS = frozenset({Category.MAP_IPC_TO_BNS.value, Category.MAP_BNS_TO_IPC.value})
 
 
 @dataclass(frozen=True)
@@ -47,10 +50,11 @@ def _score(pairs: Sequence[tuple[Case, Sequence[str]]]) -> Scores:
 
 
 def score(cases: Sequence[Case], rankings: Sequence[Sequence[str]]) -> dict[str, Scores]:
-    """Scores per category plus their unweighted mean under MACRO.
+    """Scores per category plus, under MACRO, the unweighted mean of the text categories.
 
-    The macro mean weighs categories equally: 534 generated map lookups would otherwise
-    drown the 28 hand-written lay questions. Cases without targets are not retrieval cases.
+    Equal weights stop hundreds of templated questions drowning a few dozen hand-written
+    ones. Cases without targets are not retrieval cases; map lookups are reported per
+    category but kept out of MACRO (see GRAPH_LOOKUPS).
     """
     if len(cases) != len(rankings):
         raise ValueError(f"{len(cases)} cases for {len(rankings)} rankings")
@@ -59,12 +63,12 @@ def score(cases: Sequence[Case], rankings: Sequence[Sequence[str]]) -> dict[str,
         if case.targets:
             groups[case.category.value].append((case, ranked))
     by_category = {name: _score(pairs) for name, pairs in sorted(groups.items())}
-    wrong = [s.wrong_regime_at_1 for s in by_category.values()
-             if s.wrong_regime_at_1 is not None]
+    text = [s for name, s in by_category.items() if name not in GRAPH_LOOKUPS]
+    wrong = [s.wrong_regime_at_1 for s in text if s.wrong_regime_at_1 is not None]
     by_category[MACRO] = Scores(
-        n=sum(s.n for s in by_category.values()),
-        hit={k: fmean(s.hit[k] for s in by_category.values()) for k in KS},
-        mrr=fmean(s.mrr for s in by_category.values()),
+        n=sum(s.n for s in text),
+        hit={k: fmean(s.hit[k] for s in text) for k in KS},
+        mrr=fmean(s.mrr for s in text),
         wrong_regime_at_1=fmean(wrong) if wrong else None,
     )
     return by_category

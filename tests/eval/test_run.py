@@ -7,7 +7,7 @@ from pathlib import Path
 from lexbridge.eval.cases import Case, Category
 from lexbridge.eval.metrics import MACRO
 from lexbridge.eval.report import render, write_table
-from lexbridge.eval.run import RunRecord, evaluate, write_run
+from lexbridge.eval.run import RunRecord, _latency_sample, evaluate, write_run
 from lexbridge.retrieve.dense import DenseIndex
 from lexbridge.schema import Act
 
@@ -69,3 +69,15 @@ def test_a_missing_value_renders_as_a_dash(tmp_path: Path) -> None:
 
     assert row.startswith("| v0-a | - |")
     assert " | - | " in row.split("|", 3)[3]
+
+
+def test_the_latency_sample_reaches_every_category() -> None:
+    many = [Case(id=f"m-{n}", category=Category.MAP_IPC_TO_BNS, question=f"IPC {n}?",
+                 offence_date=None, answer_act=Act.BNS, targets=("BNS:318",),
+                 wrong_regime=(), needs_clarification=False) for n in range(500)]
+
+    sample = _latency_sample([*many, *cases()])
+
+    # A plain stride over 500 templates first would never reach the hand-written questions.
+    assert {"seizes snatching", "punishment for theft", "a poem"} <= set(sample)
+    assert len(sample) <= 100

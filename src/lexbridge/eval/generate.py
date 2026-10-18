@@ -1,8 +1,9 @@
 """Cases generated from the correspondence graph, so their answers need no human labelling.
 
 Map lookups come straight from replaced_by edges. Topical questions are templated from
-IPC section titles and rotated across a date before 1 July 2024, a date after it, and no
-date at all, so the same concept is asked once per regime.
+IPC section titles. Each section is asked once, and successive sections rotate through a
+date before 1 July 2024, a date after it, and no date, so each regime gets a third of the
+sections (different sections, so before/after scores are not a paired comparison).
 """
 
 from __future__ import annotations

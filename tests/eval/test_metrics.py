@@ -40,7 +40,7 @@ def test_hits_mrr_and_wrong_regime_for_one_category() -> None:
 
 
 def test_the_macro_mean_weighs_categories_equally() -> None:
-    cases = [dated(Category.MAP_IPC_TO_BNS, n) for n in range(9)] + [dated(Category.LAY)]
+    cases = [dated(Category.TOPIC_DATED, n) for n in range(9)] + [dated(Category.LAY)]
     rankings = [["IPC:420"]] * 9 + [["IPC:1"]]
 
     scores = score(cases, rankings)
@@ -75,3 +75,16 @@ def test_a_group_with_no_wrong_regime_counterpart_reports_none() -> None:
 def test_cases_and_rankings_must_line_up() -> None:
     with pytest.raises(ValueError, match="1 cases for 0 rankings"):
         score([dated()], [])
+
+
+def test_map_lookups_are_scored_but_kept_out_of_the_text_macro() -> None:
+    lookup = Case(id="m-1", category=Category.MAP_IPC_TO_BNS, question="IPC 420 now?",
+                  offence_date=None, answer_act=Act.BNS, targets=("BNS:318",),
+                  wrong_regime=("IPC:420",), needs_clarification=False)
+
+    scores = score([dated(), lookup], [["IPC:420"], ["IPC:420"]])
+
+    # A graph lookup a text retriever cannot answer must not drag the text headline down.
+    assert scores["map_ipc_to_bns"].hit[1] == 0
+    assert scores[MACRO].hit[1] == 1
+    assert scores[MACRO].n == 1

@@ -15,6 +15,7 @@ import argparse
 import hashlib
 import json
 import time
+from collections import defaultdict
 from collections.abc import Sequence
 from pathlib import Path
 from statistics import quantiles
@@ -52,10 +53,23 @@ class RunRecord(Measured):
     golden_sha256: str
 
 
-def _latency_ms(retriever: Retriever, questions: Sequence[str]) -> dict[str, float]:
-    step = max(1, len(questions) // LATENCY_SAMPLE)
+def _latency_sample(cases: Sequence[Case]) -> list[str]:
+    # Evenly spaced within each category, not across the file: the generated templates
+    # come first and are short, so a plain stride never reached the longer hand-written
+    # and Hindi questions a user actually types.
+    groups: dict[str, list[str]] = defaultdict(list)
+    for case in cases:
+        groups[case.category.value].append(case.question)
+    per_group = max(1, LATENCY_SAMPLE // len(groups))
+    return [q for _, questions in sorted(groups.items())
+            for q in questions[::max(1, len(questions) // per_group)][:per_group]]
+
+
+def _latency_ms(retriever: Retriever, cases: Sequence[Case]) -> dict[str, float]:
+    sample = _latency_sample(cases)
+    retriever.search(sample[0], max(KS))  # warm-up: first-call allocations are not latency
     timings = []
-    for question in questions[::step][:LATENCY_SAMPLE]:
+    for question in sample:
         start = time.perf_counter()
         retriever.search(question, max(KS))
         timings.append((time.perf_counter() - start) * 1000)
@@ -71,7 +85,7 @@ def evaluate(retriever: Retriever, cases: Sequence[Case]) -> Measured:
                 for hits in retriever.search_many(questions, max(KS))]
     scores = score(cases, rankings)
     return {
-        "query_ms": _latency_ms(retriever, questions),
+        "query_ms": _latency_ms(retriever, cases),
         "scores": {
             group: {"n": s.n, **{f"hit@{k}": round(v, 4) for k, v in s.hit.items()},
                     "mrr": round(s.mrr, 4),

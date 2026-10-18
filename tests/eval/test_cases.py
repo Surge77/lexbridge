@@ -71,3 +71,13 @@ def test_cases_round_trip_through_jsonl(tmp_path: Path) -> None:
     assert read_cases(path) == cases
     # Devanagari is written as-is so the file stays reviewable.
     assert "धोखाधड़ी" in path.read_text(encoding="utf-8")
+
+
+def test_targets_must_come_from_the_code_of_the_answer() -> None:
+    with pytest.raises(ValidationError, match="every target must come from the IPC"):
+        case(targets=("BNS:152",), wrong_regime=())
+
+
+def test_wrong_regime_sections_must_come_from_the_other_code() -> None:
+    with pytest.raises(ValidationError, match="from the other code"):
+        case(wrong_regime=("IPC:415",))

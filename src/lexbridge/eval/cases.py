@@ -63,6 +63,10 @@ class Case(BaseModel):
             raise ValueError(f"{self.id}: an in-scope question needs a target section")
         elif self.needs_clarification == (self.answer_act is not None):
             raise ValueError(f"{self.id}: clarify exactly when the code is unknown")
+        if self.answer_act and not all(s.startswith(f"{self.answer_act}:") for s in self.targets):
+            raise ValueError(f"{self.id}: every target must come from the {self.answer_act}")
+        if self.answer_act and any(s.startswith(f"{self.answer_act}:") for s in self.wrong_regime):
+            raise ValueError(f"{self.id}: a wrong-regime section must come from the other code")
         return self
 
 
