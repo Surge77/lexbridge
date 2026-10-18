@@ -6,7 +6,7 @@ import pytest
 
 from lexbridge.ingest.layout import read_lines
 
-from .pdf_factory import Rule, Text, write_pdf
+from .pdf_factory import Box, Rule, Text, write_pdf
 
 
 @pytest.fixture
@@ -117,3 +117,24 @@ def test_a_full_width_rule_is_not_mistaken_for_the_footnote_rule(tmp_path: Path)
     ]])
 
     assert [line.text for line in read_lines(pdf, footnote_rule=True)] == ["1. First.--Text."]
+
+
+def test_the_frame_around_amended_text_is_not_mistaken_for_the_footnote_rule(
+    tmp_path: Path,
+) -> None:
+    # IPC page 92: a 13pt-tall frame at x 90-333 sits around the inserted 376C heading.
+    # Its bottom edge once passed as the footnote rule and cut 376C out of the corpus.
+    pdf = write_pdf(tmp_path / "b.pdf", [[
+        Box(90, 333, 669.5, 682.7),
+        Text(90, 670, 11, "1[376C. Sexual intercourse by a person in authority.--Whoever"),
+        Text(90, 694, 11, "(a) in a position of authority; or"),
+        Rule(72, 216, 733),
+        Text(72, 740, 9, "1. Subs. by Act 13 of 2013, s. 9."),
+    ]])
+
+    lines = [line.text for line in read_lines(pdf, footnote_rule=True)]
+
+    assert lines == [
+        "1[376C. Sexual intercourse by a person in authority.--Whoever",
+        "(a) in a position of authority; or",
+    ]

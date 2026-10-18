@@ -17,10 +17,12 @@ from pdfplumber.page import Page
 # pdfplumber's default (3) merges words separated by a narrow gap: the gazette's
 # "4. The" came out as "4.The". 1.5 restores the space without splitting words.
 X_TOLERANCE = 1.5
-# IndiaCode separates footnotes with a short rule from the left margin (x 72-216 on an
-# A4 page), never a full-width one. A rule this narrow, starting this far left, in the
-# lower half of the page is that separator.
-FOOTNOTE_RULE_MAX_LEFT = 100.0
+# IndiaCode separates footnotes with a hairline rule from the left margin: measured at
+# x 72-216, 0.7pt thick. Frames drawn around amended text are 13pt tall and start at
+# x 90, and their bottom edge once passed for this rule (IPC page 92 lost 376C). So the
+# rule must be thin, start at the margin, and be far narrower than the page.
+FOOTNOTE_RULE_MAX_LEFT = 80.0
+FOOTNOTE_RULE_MAX_THICKNESS = 2.0
 FOOTNOTE_RULE_WIDTH = (100.0, 250.0)
 
 Column = Literal["body", "margin"]
@@ -106,14 +108,15 @@ def _dominant_size(chars: list[dict]) -> float:
 
 
 def _footnote_top(page: Page) -> float | None:
-    """Top of the short footnote rule in the page's lower half, if there is one."""
+    """Top of the footnote rule in the page's lower half, if there is one."""
     low, high = FOOTNOTE_RULE_WIDTH
+    # A rule is drawn either as a stroked line or as a hairline-thin filled rectangle.
+    thin = [*page.lines, *(r for r in page.rects if r["height"] < FOOTNOTE_RULE_MAX_THICKNESS)]
     tops = [
-        float(edge["top"])
-        for edge in page.edges
-        if edge["orientation"] == "h"
-        and edge["x0"] <= FOOTNOTE_RULE_MAX_LEFT
-        and low <= edge["x1"] - edge["x0"] <= high
-        and edge["top"] > float(page.height) / 2
+        float(obj["top"])
+        for obj in thin
+        if obj["x0"] <= FOOTNOTE_RULE_MAX_LEFT
+        and low <= obj["x1"] - obj["x0"] <= high
+        and obj["top"] > float(page.height) / 2
     ]
     return min(tops) if tops else None
