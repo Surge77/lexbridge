@@ -32,6 +32,8 @@ class Bundle:
     manifest: Mapping[str, object]
     sections: tuple[Section, ...]
     edges: tuple[Edge, ...]
+    # Names the exact section text, for anything derived from it: cached vectors, reports.
+    sections_sha256: str
     _by_id: Mapping[str, Section] = field(repr=False)
     _replaced_by: Mapping[str, tuple[str, ...]] = field(repr=False)
     _replaces: Mapping[str, tuple[str, ...]] = field(repr=False)
@@ -55,14 +57,16 @@ def _read_jsonl(path: Path) -> list[dict[str, object]]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
 
 
-def _verify(root: Path, manifest: Mapping[str, object]) -> None:
+def _verify(root: Path, manifest: Mapping[str, object]) -> dict[str, str]:
     files = manifest.get("files")
     if not isinstance(files, dict):
         raise BundleIntegrityError(f"{root}/manifest.json lists no file hashes")
-    for name in BUNDLE_FILES:
-        digest = hashlib.sha256((root / name).read_bytes()).hexdigest()
+    digests = {name: hashlib.sha256((root / name).read_bytes()).hexdigest()
+               for name in BUNDLE_FILES}
+    for name, digest in digests.items():
         if files.get(name) != digest:
             raise BundleIntegrityError(f"{root}/{name} does not match its manifest hash")
+    return digests
 
 
 def _index(edges: Iterable[Edge]) -> tuple[dict[str, tuple[str, ...]], dict[str, tuple[str, ...]]]:
@@ -80,7 +84,7 @@ def _index(edges: Iterable[Edge]) -> tuple[dict[str, tuple[str, ...]], dict[str,
 
 def load_bundle(root: Path) -> Bundle:
     manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
-    _verify(root, manifest)
+    digests = _verify(root, manifest)
     sections = tuple(
         s
         for s in map(Section.model_validate, _read_jsonl(root / "sections.jsonl"))
@@ -96,6 +100,7 @@ def load_bundle(root: Path) -> Bundle:
         manifest=manifest,
         sections=sections,
         edges=edges,
+        sections_sha256=digests["sections.jsonl"],
         _by_id={s.id: s for s in sections},
         _replaced_by=forward,
         _replaces=backward,

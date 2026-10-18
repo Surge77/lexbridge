@@ -19,6 +19,12 @@ dependencies = [
     # Not PyMuPDF: it is AGPL, and this ships as a network service. See
     # docs/decisions/0001-pdfplumber-not-pymupdf.md.
     "pdfplumber==0.11.10",
+    "numpy==2.4.6",
+    # Dense retrieval. Models run on CPU: ~940 sections embed in minutes, and serving
+    # embeds one short query per request. CI installs the CPU-only torch wheel first
+    # (see .github/workflows/ci.yml); the default Linux wheel bundles CUDA.
+    "sentence-transformers==6.1.0",
+    "torch==2.14.1",
 ]
 
 [project.optional-dependencies]
