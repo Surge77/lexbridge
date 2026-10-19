@@ -20,6 +20,7 @@ from lexbridge.answer.prompt import (
     MalformedReplyError,
     assumption,
     clarification,
+    correspondence,
     messages,
     parse,
 )
@@ -73,7 +74,7 @@ def _in_scope(chat: Chat, question: str, sources: Sequence[Section],
     completion = chat.complete([
         {"role": "system", "content": SCOPE_SYSTEM},
         {"role": "user", "content": f"Provisions:\n{titles}\n\nQuestion: {question}"},
-    ], max_tokens=50)
+    ], max_tokens=300)  # room for a reasoning model to think before its one-line JSON
     calls.append(completion)
     try:
         return bool(json.loads(completion.text).get("in_scope"))
@@ -103,8 +104,11 @@ def answer(question: str, *, retriever: Retriever, bundle: Bundle, chat: Chat) -
         return Answer(Status.CLARIFY, clarification(decided, _candidates(sources)), (), None,
                       decided.reason, calls=calls)
 
-    allowed = {s.id for s in sources} | set(facts.references)
-    convo = messages(question, sources, decided, facts.references)
+    table = correspondence(bundle.edges, facts.references)
+    # The table is grounded data too: its sections may be named as well as the sources.
+    allowed = ({s.id for s in sources} | set(facts.references)
+               | {e.src for e in table} | {e.dst for e in table})
+    convo = messages(question, sources, decided, facts.references, table)
     first_bad: list[str] | None = None
     reply = None
     for _ in range(MAX_ATTEMPTS):

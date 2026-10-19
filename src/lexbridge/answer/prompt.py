@@ -9,10 +9,11 @@ are written here from templates: they need no model, and so cannot cite anything
 from __future__ import annotations
 
 import json
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import date, timedelta
 
+from lexbridge.ingest.graph import Edge, Relation
 from lexbridge.query.dates import Period
 from lexbridge.query.route import Reason, Route
 from lexbridge.schema import Act, Section
@@ -86,16 +87,34 @@ def clarification(route: Route, candidates: Sequence[Section]) -> str:
     return " ".join(lines)
 
 
+def correspondence(edges: Iterable[Edge], cited: Sequence[str]) -> list[Edge]:
+    """Rows of the official IPC-BNS table that involve a section the question cites.
+
+    A section's own text never says what it replaced, so without these rows the model
+    cannot see why BNS 318 answers "what replaced IPC 420?".
+    """
+    wanted = set(cited)
+    return [e for e in edges
+            if e.relation is Relation.REPLACED_BY and (e.src in wanted or e.dst in wanted)]
+
+
+def _row(edge: Edge) -> str:
+    return (f"- {edge.src.replace(':', ' ')} was replaced by "
+            f"{edge.dst.replace(':', ' ')}{edge.detail}")
+
+
 def messages(question: str, sources: Sequence[Section], route: Route,
-             cited: Sequence[str] = ()) -> list[dict[str, str]]:
+             cited: Sequence[str] = (), table: Sequence[Edge] = ()) -> list[dict[str, str]]:
     if route.act is None:
         raise ValueError("only a routed question is sent to the model; ask for the date")
-    blocks =[f"[{i}] {s.act} section {s.number}: {s.title}\n{s.text[:SOURCE_CHARS]}"
+    blocks = [f"[{i}] {s.act} section {s.number}: {s.title}\n{s.text[:SOURCE_CHARS]}"
               for i, s in enumerate(sources, 1)]
+    rows = ("\n\nOfficial IPC-BNS correspondence table:\n" + "\n".join(map(_row, table))
+            if table else "")
     return [
         {"role": "system", "content": SYSTEM.format(code=CODE_NAME[route.act],
                                                      assumption=assumption(route, cited))},
-        {"role": "user", "content": "Sources:\n\n" + "\n\n".join(blocks)
+        {"role": "user", "content": "Sources:\n\n" + "\n\n".join(blocks) + rows
          + f"\n\nQuestion: {question}"},
     ]
 

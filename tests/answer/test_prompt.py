@@ -8,10 +8,12 @@ from lexbridge.answer.prompt import (
     MalformedReplyError,
     assumption,
     clarification,
+    correspondence,
     describe,
     messages,
     parse,
 )
+from lexbridge.ingest.graph import Edge, Relation
 from lexbridge.query.dates import Period
 from lexbridge.query.route import Reason, Route
 from lexbridge.schema import Act, Section, Status
@@ -90,3 +92,17 @@ def test_a_reply_keeps_only_citations_that_name_a_source() -> None:
 def test_a_malformed_reply_is_refused(raw: str) -> None:
     with pytest.raises(MalformedReplyError):
         parse(raw, n_sources=3)
+
+
+def test_correspondence_rows_for_a_cited_section_reach_the_model() -> None:
+    edges = [Edge("IPC:420", "BNS:318", Relation.REPLACED_BY, "(4)"),
+             Edge("IPC:379", "BNS:303", Relation.REPLACED_BY, "(2)"),
+             Edge("BNS:319", "BNS:318", Relation.REFERS_TO, "")]
+
+    table = correspondence(edges, ["IPC:420"])
+    _, user = messages("BNS equivalent of IPC 420?", [section(Act.BNS, "318", "Cheating")],
+                       Route(Act.BNS, Reason.MAP), ["IPC:420"], table)
+
+    assert table == [edges[0]]
+    assert "Official IPC-BNS correspondence table:\n- IPC 420 was replaced by BNS 318(4)" \
+        in user["content"]

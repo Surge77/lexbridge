@@ -5,7 +5,7 @@ import json
 import httpx
 import pytest
 
-from lexbridge.answer.llm import Gateway, LLMUnavailableError, Provider
+from lexbridge.answer.llm import Gateway, LLMUnavailableError, Provider, ProviderError
 
 A = Provider("a", "https://a.test/v1", "model-a", "A_KEY")
 B = Provider("b", "https://b.test/v1", "model-b", "B_KEY")
@@ -58,12 +58,38 @@ def test_a_timeout_falls_back_to_the_next() -> None:
     assert gateway(handler).complete([{"role": "user", "content": "hi"}]).text == "from b"
 
 
-def test_a_bad_request_is_raised_not_hidden_behind_a_fallback() -> None:
+def test_a_bad_request_is_raised_with_its_reason_not_hidden_behind_a_fallback() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(400, json={"error": "bad"})
+        return httpx.Response(401, json={"error": {"message": "invalid api key"}})
 
-    with pytest.raises(httpx.HTTPStatusError):
+    with pytest.raises(ProviderError, match=r"a: HTTP 401: .*invalid api key"):
         gateway(handler).complete([{"role": "user", "content": "hi"}])
+
+
+def test_json_the_provider_rejected_comes_back_as_the_models_own_text() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(400, json={"error": {"code": "json_validate_failed",
+                                                   "failed_generation": "{oops"}})
+
+    completion = gateway(handler).complete([{"role": "user", "content": "hi"}])
+
+    # Handed to the caller's malformed-reply handling, not raised as a bad request.
+    assert (completion.text, completion.provider) == ("{oops", "a")
+
+
+def test_provider_options_are_sent_with_every_request() -> None:
+    seen: list[dict[str, object]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(json.loads(request.content))
+        return ok("x")
+
+    reasoning = Provider("r", "https://r.test/v1", "m", "R_KEY", {"reasoning_effort": "low"})
+    g = Gateway([reasoning], client=httpx.Client(transport=httpx.MockTransport(handler)),
+                env={"R_KEY": "k"})
+    g.complete([{"role": "user", "content": "hi"}])
+
+    assert seen[0]["reasoning_effort"] == "low"
 
 
 def test_every_provider_failing_names_each_failure() -> None:
