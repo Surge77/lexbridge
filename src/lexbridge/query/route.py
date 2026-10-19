@@ -8,9 +8,13 @@ evidence and abstains on anything else:
    counterpart, whatever date it also gives.
 2. A month named without its year means the dates were not fully read: ask.
 3. A date just after a word about the case ("arrested on", "FIR filed in") is not the
-   offence date but a ceiling on it: the offence happened by then. A ceiling before
-   1 July 2024 settles the IPC on its own; an offence dated after its ceiling is a
-   misread, so ask. Birth dates say nothing about the offence.
+   offence date. It can only veto: an offence dated after a case step means a date was
+   misread, so ask. It never decides a code, because a keyword cannot tell this case's
+   arrest from an unrelated filing or an old judgment. Birth dates are ignored. If no
+   date is left that could be the offence date, ask.
+
+A veto can only turn an answer into a question, so no rule in step 3 can produce a
+confident wrong code; positive routes come only from steps 1, 4, 5, 6 and 7.
 4. Specific dates (a day, a month, a bound) decide, and the earliest wins, because the
    offence comes before the complaint, the FIR and the trial. Before 1 July 2024 is the
    IPC, from then the BNS (BNS s.358); a period that straddles the cutover decides
@@ -27,7 +31,6 @@ Every route carries the period it relied on, so an answer can state its assumpti
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
 from enum import StrEnum
 
 from lexbridge.query.dates import Period, Role
@@ -40,12 +43,9 @@ class Reason(StrEnum):
     DATE = "date"
     NAMED_CODE = "named_code"
     STRADDLES = "straddles"  # the deciding period spans 1 July 2024
-    # A step in the case before 1 July 2024 ("arrested on 3 March 2024") puts the offence
-    # before it, so the IPC applies even with no offence date.
-    CEILING = "ceiling"
     # Dates disagree: a bare year against the dates, or an offence after its own arrest.
     CONFLICT = "conflict"
-    UNPLACED = "unplaced"  # no offence date and no ceiling that settles the code
+    UNPLACED = "unplaced"  # dates were given, but none of them is the offence date
     INCOMPLETE = "incomplete"  # a month without its year
     UNKNOWN = "unknown"  # no date and no single code named
 
@@ -82,22 +82,16 @@ def _by_date(facts: Facts) -> Route | None:
     if facts.incomplete_date:
         return Route(None, Reason.INCOMPLETE)
     evidence = [p for p in facts.periods if p.role is Role.EVENT]
-    # The earliest step in the case came after the offence, so the offence ended by then.
-    ceiling = min((p.end for p in facts.periods if p.role is Role.CASE), default=None)
     if not evidence:
-        if ceiling is None:
-            return Route(None, Reason.UNPLACED) if facts.periods else None
-        bound = Period(date.min, ceiling)
-        act = _act_for(bound)
-        return Route(act, Reason.CEILING, bound) if act else Route(None, Reason.UNPLACED, bound)
+        return Route(None, Reason.UNPLACED) if facts.periods else None
     specific = [p for p in evidence if p.specific]
     years = [p for p in evidence if not p.specific]
     basis = min(specific or years, key=lambda p: p.start)
-    if ceiling is not None:
-        if basis.start > ceiling:
-            # An offence dated after its own arrest or FIR: one of the two was misread.
-            return Route(None, Reason.CONFLICT, basis)
-        basis = Period(basis.start, min(basis.end, ceiling), basis.specific)
+    # A case step comes after its offence, so an offence dated after one means a date was
+    # misread. The step only ever vetoes, never decides or narrows: a keyword cannot tell
+    # this case's arrest from an unrelated divorce filing or a 2018 judgment.
+    if any(p.role is Role.CASE and basis.start > p.end for p in facts.periods):
+        return Route(None, Reason.CONFLICT, basis)
     act = _act_for(basis)
     if act is None:
         return Route(None, Reason.STRADDLES, basis)

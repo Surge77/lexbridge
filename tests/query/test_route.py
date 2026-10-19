@@ -123,17 +123,28 @@ def test_a_month_without_its_year_marks_the_reading_incomplete() -> None:
     ("no later than 1 July 2024", None, Reason.STRADDLES),
     ("on or after 30 June 2024", None, Reason.STRADDLES),
     ("He sent correspondence about IPC 420 on 3 March 2024", Act.IPC, Reason.DATE),
-    # Third round: a step in the case is a ceiling on the offence date.
+    # Third round: a step in the case can veto (offence after its own arrest), never decide.
     ("He was arrested for stealing on 3 March 2024 and the court took cognizance on "
      "10 Sept 2024", None, Reason.CONFLICT),
     ("convicted of theft on 3 March 2024; appeal pending in the High Court on 5 Aug 2025",
      None, Reason.CONFLICT),
-    ("sentenced for theft on 3 March 2024", Act.IPC, Reason.CEILING),
+    ("sentenced for theft on 3 March 2024", None, Reason.UNPLACED),
     ("arrested for theft on 5 Aug 2024", None, Reason.UNPLACED),  # offence could be June
-    ("A theft in 2024; he was arrested on 3 March 2024", Act.IPC, Reason.DATE),
+    ("A theft in 2024; he was arrested on 3 March 2024", None, Reason.STRADDLES),
     ("juvenile born on 5 Aug 2007 stole a phone on 3 March 2024", Act.IPC, Reason.DATE),
     ("IPC 420 offence in 12/2024", Act.BNS, Reason.DATE),
     ("BNS 318 offence 3/2024", Act.IPC, Reason.DATE),
+    # Final round: a step from another proceeding must not settle the code.
+    ("I filed for divorce in 2022 and now my husband threatens me, which section applies?",
+     None, Reason.UNPLACED),
+    ("He was convicted in 2020 for theft; now he has assaulted me", None, Reason.UNPLACED),
+    ("The Supreme Court decided in 2018 that section 377 is partly invalid; is it still an "
+     "offence?", None, Reason.UNPLACED),
+    ("In the judgment of 6 September 2018 on IPC 377, what is the position now?", None,
+     Reason.UNPLACED),
+    ("reported in 2023 that fraud cases rose; what is BNS 318?", None, Reason.UNPLACED),
+    ("I had filed a complaint in March 2024; he threatened me in 2024", None,
+     Reason.STRADDLES),
 ])
 def test_the_route(text: str, act: Act | None, reason: Reason) -> None:
     decided = route(understand(text))
