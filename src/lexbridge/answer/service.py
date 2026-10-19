@@ -62,6 +62,9 @@ class Answer:
     citations: tuple[str, ...]
     act: Act | None
     reason: Reason
+    # Every section the answer was allowed to name: its sources, the sections the
+    # question cites, and their rows of the correspondence table.
+    allowed: tuple[str, ...] = ()
     # For evaluation: what the first draft named without support, and what was cut.
     first_draft_unsupported: tuple[str, ...] = ()
     removed: tuple[str, ...] = ()
@@ -101,8 +104,9 @@ def answer(question: str, *, retriever: Retriever, bundle: Bundle, chat: Chat) -
             return Answer(Status.DECLINED, "This is outside the Indian Penal Code and the "
                           "Bharatiya Nyaya Sanhita, which are the only laws I cover.", (),
                           None, decided.reason, calls=calls)
-        return Answer(Status.CLARIFY, clarification(decided, _candidates(sources)), (), None,
-                      decided.reason, calls=calls)
+        candidates = _candidates(sources)
+        return Answer(Status.CLARIFY, clarification(decided, candidates), (), None,
+                      decided.reason, tuple(s.id for s in candidates), calls=calls)
 
     table = correspondence(bundle.edges, facts.references)
     # The table is grounded data too: its sections may be named as well as the sources.
@@ -124,7 +128,7 @@ def answer(question: str, *, retriever: Retriever, bundle: Bundle, chat: Chat) -
             continue
         if reply.declined:
             return Answer(Status.DECLINED, reply.text, (), decided.act, decided.reason,
-                          calls=calls)
+                          tuple(sorted(allowed)), calls=calls)
         bad = unsupported(reply.text, allowed)
         if first_bad is None:
             first_bad = bad
@@ -135,14 +139,15 @@ def answer(question: str, *, retriever: Retriever, bundle: Bundle, chat: Chat) -
                   f"the sources: {', '.join(bad)}. Answer again, naming only sections "
                   "that appear in the numbered sources or the question."}]
 
+    shown = tuple(sorted(allowed))
     if reply is None:
-        return Answer(Status.DECLINED, NO_ANSWER, (), decided.act, decided.reason,
+        return Answer(Status.DECLINED, NO_ANSWER, (), decided.act, decided.reason, shown,
                       calls=calls)
     text, removed = strip_unsupported(reply.text, allowed)
     if not text:
-        return Answer(Status.DECLINED, NO_ANSWER, (), decided.act, decided.reason,
+        return Answer(Status.DECLINED, NO_ANSWER, (), decided.act, decided.reason, shown,
                       tuple(first_bad or ()), tuple(removed), calls)
     lead = assumption(decided, facts.references)
     return Answer(Status.ANSWERED, f"{lead} {text}".strip(),
                   tuple(sources[n - 1].id for n in reply.citations), decided.act,
-                  decided.reason, tuple(first_bad or ()), tuple(removed), calls)
+                  decided.reason, shown, tuple(first_bad or ()), tuple(removed), calls)
