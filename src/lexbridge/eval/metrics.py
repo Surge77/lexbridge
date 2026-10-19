@@ -9,11 +9,12 @@ right provision from the wrong code, the failure a date router exists to remove.
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from statistics import fmean
 
 from lexbridge.eval.cases import Case, Category
+from lexbridge.schema import Act
 
 KS = (1, 5, 10)
 MACRO = "macro"
@@ -72,3 +73,26 @@ def score(cases: Sequence[Case], rankings: Sequence[Sequence[str]]) -> dict[str,
         wrong_regime_at_1=fmean(wrong) if wrong else None,
     )
     return by_category
+
+
+def routing(cases: Sequence[Case], act_of: Callable[[str], Act | None]) -> dict[str, int]:
+    """How the router decided against each case's known code.
+
+    wrong (the other code) and over_routed (a code chosen where the answer must ask for
+    the date) are the errors that matter: both answer confidently from the wrong law.
+    unrouted means the router asked when the code was knowable, which costs a round trip.
+    """
+    counts = {"correct": 0, "wrong": 0, "over_routed": 0, "unrouted": 0}
+    for case in cases:
+        if case.category is Category.OUT_OF_SCOPE:
+            continue
+        got = act_of(case.question)
+        if got == case.answer_act:
+            counts["correct"] += 1
+        elif got is None:
+            counts["unrouted"] += 1
+        elif case.answer_act is None:
+            counts["over_routed"] += 1
+        else:
+            counts["wrong"] += 1
+    return counts

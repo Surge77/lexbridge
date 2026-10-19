@@ -31,17 +31,26 @@ def _percent(value: float | None) -> str:
     return MISSING if value is None else f"{value * 100:.1f}"
 
 
+def _routing(run: RunRecord) -> str:
+    counts = run.get("routing")
+    if counts is None:
+        return MISSING
+    # Both errors answer from the wrong law with confidence; asking instead is not an error.
+    return f"{counts['wrong'] + counts['over_routed']} / {sum(counts.values())}"
+
+
 def render(runs: Sequence[RunRecord]) -> str:
     lines = [HEADER, "## Overall (macro)", "",
-             "| run | embedder | " + " | ".join(f"hit@{k}" for k in KS)
-             + " | MRR | wrong-regime@1 | query p50 / p95 ms |",
-             "|---|---|" + "---:|" * (len(KS) + 3)]
+             "| run | stages | embedder | " + " | ".join(f"hit@{k}" for k in KS)
+             + " | MRR | wrong-regime@1 | routed wrong | query p50 / p95 ms |",
+             "|---|---|---|" + "---:|" * (len(KS) + 4)]
     for run in runs:
         macro, latency = run["scores"][MACRO], run["query_ms"]
         lines.append(
-            f"| {run['name']} | {run['embedder'] or MISSING} | "
+            f"| {run['name']} | {run['retriever']} | {run['embedder'] or MISSING} | "
             + " | ".join(_percent(macro[f"hit@{k}"]) for k in KS)
             + f" | {_percent(macro['mrr'])} | {_percent(macro['wrong_regime@1'])}"
+            + f" | {_routing(run)}"
             + f" | {latency['p50']} / {latency['p95']} |")
 
     categories = sorted({c for run in runs for c in run["scores"] if c != MACRO})
@@ -55,6 +64,9 @@ def render(runs: Sequence[RunRecord]) -> str:
     counts = {c: s["n"] for run in runs[-1:] for c, s in run["scores"].items() if c != MACRO}
     lines += ["", "Cases per category: "
               + ", ".join(f"{c} {n}" for c, n in sorted(counts.items())) + "."]
+    notes = [f"- **{run['name']}**: {note}" for run in runs if (note := run.get("note"))]
+    if notes:
+        lines += ["", "## Decisions", "", *notes]
     return "\n".join(lines) + "\n"
 
 
