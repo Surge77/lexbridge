@@ -6,7 +6,7 @@ is regenerated from all run files, so the table is never edited by hand and ever
 in it traces back to a file.
 
 Usage:
-    python -m lexbridge.eval.run artifacts/v2026-10-18 --model e5-small --name v0-dense-e5-small
+    python -m lexbridge.eval.run artifacts/v2026-10-18 v1-hybrid   # a name from PIPELINES
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ from collections import defaultdict
 from collections.abc import Sequence
 from pathlib import Path
 from statistics import quantiles
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 from lexbridge.eval.cases import Case
 from lexbridge.eval.metrics import KS, first_rank, score
@@ -51,6 +51,8 @@ class RunRecord(Measured):
     index_seconds: float
     bundle_sections_sha256: str
     golden_sha256: str
+    # The rung's decision; absent from runs recorded before notes existed.
+    note: NotRequired[str]
 
 
 def _latency_sample(cases: Sequence[Case]) -> list[str]:
@@ -115,29 +117,34 @@ def main() -> None:  # pragma: no cover - loads a real model
     from lexbridge.eval.cases import read_cases
     from lexbridge.eval.golden import GOLDEN
     from lexbridge.eval.report import write_table
+    from lexbridge.retrieve.bm25 import BM25Index
     from lexbridge.retrieve.dense import DenseIndex
     from lexbridge.retrieve.embed import SentenceTransformerEmbedder
+    from lexbridge.retrieve.pipeline import PIPELINES, Pipeline
 
     parser = argparse.ArgumentParser()
     parser.add_argument("bundle", type=Path)
-    parser.add_argument("--model", required=True)
-    parser.add_argument("--name", required=True)
+    parser.add_argument("pipeline", choices=sorted(PIPELINES))
     args = parser.parse_args()
 
+    spec = PIPELINES[args.pipeline]
     bundle = load_bundle(args.bundle)
-    embedder = SentenceTransformerEmbedder(args.model)
+    embedder = SentenceTransformerEmbedder(spec.embedder)
     start = time.perf_counter()
-    index = DenseIndex.build(bundle, embedder, cache_dir=args.bundle / "vectors")
+    dense = DenseIndex.build(bundle, embedder, cache_dir=args.bundle / "vectors")
+    lexical = BM25Index.build(bundle) if spec.lexical else None
     index_seconds = round(time.perf_counter() - start, 1)
+    pipeline = Pipeline(dense, lexical)
     record: RunRecord = {
-        "name": args.name,
-        "retriever": "dense",
+        "name": args.pipeline,
+        "retriever": spec.describe(),
         "embedder": embedder.name,
         "parameters": embedder.parameters,
         "index_seconds": index_seconds,
         "bundle_sections_sha256": bundle.sections_sha256,
         "golden_sha256": sha256_of(GOLDEN),
-        **evaluate(index, read_cases(GOLDEN)),
+        "note": spec.note,
+        **evaluate(pipeline, read_cases(GOLDEN)),
     }
     print(write_run(record), "->", write_table())
 

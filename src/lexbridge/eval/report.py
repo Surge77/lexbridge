@@ -33,13 +33,13 @@ def _percent(value: float | None) -> str:
 
 def render(runs: Sequence[RunRecord]) -> str:
     lines = [HEADER, "## Overall (macro)", "",
-             "| run | embedder | " + " | ".join(f"hit@{k}" for k in KS)
+             "| run | stages | embedder | " + " | ".join(f"hit@{k}" for k in KS)
              + " | MRR | wrong-regime@1 | query p50 / p95 ms |",
-             "|---|---|" + "---:|" * (len(KS) + 3)]
+             "|---|---|---|" + "---:|" * (len(KS) + 3)]
     for run in runs:
         macro, latency = run["scores"][MACRO], run["query_ms"]
         lines.append(
-            f"| {run['name']} | {run['embedder'] or MISSING} | "
+            f"| {run['name']} | {run['retriever']} | {run['embedder'] or MISSING} | "
             + " | ".join(_percent(macro[f"hit@{k}"]) for k in KS)
             + f" | {_percent(macro['mrr'])} | {_percent(macro['wrong_regime@1'])}"
             + f" | {latency['p50']} / {latency['p95']} |")
@@ -55,6 +55,9 @@ def render(runs: Sequence[RunRecord]) -> str:
     counts = {c: s["n"] for run in runs[-1:] for c, s in run["scores"].items() if c != MACRO}
     lines += ["", "Cases per category: "
               + ", ".join(f"{c} {n}" for c, n in sorted(counts.items())) + "."]
+    notes = [f"- **{run['name']}**: {note}" for run in runs if (note := run.get("note"))]
+    if notes:
+        lines += ["", "## Decisions", "", *notes]
     return "\n".join(lines) + "\n"
 
 

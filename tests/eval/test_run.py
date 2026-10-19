@@ -67,7 +67,7 @@ def test_a_missing_value_renders_as_a_dash(tmp_path: Path) -> None:
 
     row = next(line for line in render([run]).splitlines() if line.startswith("| v0-a"))
 
-    assert row.startswith("| v0-a | - |")
+    assert row.startswith("| v0-a | dense | - |")
     assert " | - | " in row.split("|", 3)[3]
 
 
@@ -81,3 +81,10 @@ def test_the_latency_sample_reaches_every_category() -> None:
     # A plain stride over 500 templates first would never reach the hand-written questions.
     assert {"seizes snatching", "punishment for theft", "a poem"} <= set(sample)
     assert len(sample) <= 100
+
+
+def test_a_rung_decision_is_rendered_under_its_name(tmp_path: Path) -> None:
+    run = record(tmp_path, "v1-b")
+    run["note"] = "Not kept: no gain."
+
+    assert "- **v1-b**: Not kept: no gain." in render([record(tmp_path, "v0-a"), run])
