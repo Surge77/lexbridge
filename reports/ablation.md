@@ -12,11 +12,14 @@ each, one question moves them by 4-17 points.
 
 ## Overall (macro)
 
-| run | stages | embedder | hit@1 | hit@5 | hit@10 | MRR | wrong-regime@1 | query p50 / p95 ms |
-|---|---|---|---:|---:|---:|---:|---:|---:|
-| v0-dense-bge-m3 | dense | bge-m3@5617a9f6.15abf2 | 36.9 | 64.3 | 78.1 | 49.3 | 25.6 | 105.77 / 133.89 |
-| v0-dense-e5-small | dense | e5-small@614241f6.edf768 | 32.2 | 51.7 | 62.4 | 41.7 | 18.6 | 16.2 / 20.02 |
-| v1-hybrid | dense+bm25/rrf | bge-m3@5617a9f6.15abf2 | 36.5 | 62.5 | 76.8 | 47.6 | 12.2 | 733.89 / 1904.14 |
+| run | stages | embedder | hit@1 | hit@5 | hit@10 | MRR | wrong-regime@1 | routed wrong | query p50 / p95 ms |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|
+| v0-dense-bge-m3 | dense | bge-m3@5617a9f6.15abf2 | 36.9 | 64.3 | 78.1 | 49.3 | 25.6 | - | 105.77 / 133.89 |
+| v0-dense-e5-small | dense | e5-small@614241f6.edf768 | 32.2 | 51.7 | 62.4 | 41.7 | 18.6 | - | 16.2 / 20.02 |
+| v1-hybrid | dense+bm25/rrf | bge-m3@5617a9f6.15abf2 | 36.5 | 62.5 | 76.8 | 47.6 | 12.2 | - | 733.89 / 1904.14 |
+| v2-route | dense+route | bge-m3@5617a9f6.15abf2 | 52.0 | 69.9 | 84.0 | 60.4 | 0.0 | 0 / 1466 | 97.71 / 129.54 |
+| v3-references | dense+route+references | bge-m3@5617a9f6.15abf2 | 54.1 | 71.9 | 84.0 | 62.2 | 0.0 | 0 / 1466 | 92.58 / 134.93 |
+| v4-rerank | dense+route+rerank:mminilm-l12@10+references | bge-m3@5617a9f6.15abf2 | 55.8 | 76.1 | 84.0 | 66.0 | 0.0 | 0 / 1466 | 1293.7 / 1712.96 |
 
 ## hit@5 by category
 
@@ -25,6 +28,9 @@ each, one question moves them by 4-17 points.
 | v0-dense-bge-m3 | 66.7 | 30.0 | 53.6 | 0.3 | 1.3 | 87.3 | 98.3 | 50.0 |
 | v0-dense-e5-small | 50.0 | 20.0 | 39.3 | 0.6 | 1.7 | 79.7 | 96.0 | 25.0 |
 | v1-hybrid | 50.0 | 30.0 | 46.4 | 0.0 | 1.3 | 89.3 | 96.6 | 62.5 |
+| v2-route | 66.7 | 30.0 | 67.9 | 0.3 | 1.3 | 93.8 | 98.3 | 62.5 |
+| v3-references | 66.7 | 30.0 | 67.9 | 100.0 | 100.0 | 93.8 | 98.3 | 75.0 |
+| v4-rerank | 66.7 | 30.0 | 78.6 | 100.0 | 100.0 | 94.4 | 99.4 | 87.5 |
 
 Cases per category: boundary 6, hindi 10, lay 28, map_bns_to_ipc 348, map_ipc_to_bns 534, topic_dated 355, topic_undated 177, tricky 8.
 
@@ -32,3 +38,5 @@ Cases per category: boundary 6, hindi 10, lay 28, map_bns_to_ipc 348, map_ipc_to
 
 - **v0-dense-bge-m3**: Chosen embedder: +12.6 macro hit@5 over e5-small for 9x the query latency; on the hand-written cases it finds 10 answers e5 misses and misses 2 that e5 finds. See docs/decisions/0002-bge-m3-for-dense-retrieval.md.
 - **v1-hybrid**: Not kept. Macro hit@5 fell 64.3 -> 62.5 (lay lost 2 cases, tricky gained 1), and as a candidate generator it found no more: recall@20 84.3 vs 83.6, recall@50 87.6 vs 88.1. Its halved wrong-regime@1 is incidental; BM25 knows nothing of dates. Later rungs build on dense alone; the code stays so this row reproduces.
+- **v2-route**: Kept. hit@1 36.9 -> 52.0 on the text categories: 131 cases gained, none lost (sign test p ~ 1e-40). wrong-regime@1 25.6 -> 0. The router decided 584 of 584 in-scope non-map questions correctly with no confident error; map lookups name both codes and are left unrouted at this rung.
+- **v3-references**: Kept; the default pipeline. Map lookups 1% -> 100% hit@5, close to by construction (the same project wrote the templates and the citation patterns; unit tests carry other phrasings). Text macro hit@5 +2.1 from cited sections in tricky questions. The router now decides all 1,466 in-scope questions with no confident error.
