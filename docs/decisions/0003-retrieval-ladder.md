@@ -60,5 +60,19 @@ Retrieval already ranks the useful neighbours above what the citation graph adds
 - Hindi stays the weakest category (30% hit@5) at every rung. No retrieval stage moved
   it, so it is a corpus and embedding limit, not a ranking one. It is listed in the
   README limitations.
-- The router is rules, not a model. It answers "which code?" with no confident error on
-  the golden set, and it asks rather than guesses when a period straddles 1 July 2024.
+- The router is rules, not a model. Two rounds of adversarial review found eight phrasings
+  that it routed confidently to the wrong code, and the golden set saw none of them,
+  because one author wrote both the templates and the patterns. Examples: act years,
+  rupee amounts, case numbers like "FIR 7/2024", "before 1 July 2024", "born in 1999",
+  "FIR filed in 2025". The fix was to change the design, not to add patterns:
+  - It abstains on weak or conflicting evidence.
+  - Procedural dates ("filed in", "born in", "trial in") are not offence evidence.
+  - It asks when a month has no year.
+
+  Each case is now a regression test.
+- Picking the offence date out of free text is a language-understanding problem, and
+  rules will keep a residual error rate. So a misread is made visible instead of silent:
+  - Every route carries the period it relied on (`Route.basis`).
+  - **P5 must state that assumption in the answer** ("assuming the offence was on
+    5 August 2024, the BNS applies").
+  - **P6 must accept an explicit `offence_date`** that overrides what the text says.

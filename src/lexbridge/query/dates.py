@@ -5,6 +5,10 @@ Two kinds of evidence, kept apart because they deserve different trust. A specif
 events. A bare four-digit year is weak: it may be the year of an Act, a birth year, or
 an amount nobody masked. The router lets weak evidence decide only when nothing
 specific exists, and abstains when the two disagree.
+
+A date in the same clause as a procedural word ("filed", "born", "FIR", "trial") is read
+but is not evidence of when the offence happened: "FIR filed in August 2024" says
+nothing about whether the theft was in June or July.
 """
 
 from __future__ import annotations
@@ -35,28 +39,41 @@ PATTERNS = (
     # Day first, as written in India: 3/5/2024 is 3 May.
     ("numeric", re.compile(_L + r"(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})" + _R)),
     ("day_month", re.compile(_L + r"(\d{1,2})(?:st|nd|rd|th)?\s+(?:of\s+)?(" + _MONTH
-                             + r")[\s,]+" + _YEAR + _R, re.IGNORECASE)),
-    ("month_day", re.compile(_L + r"(" + _MONTH + r")\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+"
+                             + r")\.?[\s,]+" + _YEAR + _R, re.IGNORECASE)),
+    ("month_day", re.compile(_L + r"(" + _MONTH + r")\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+"
                              + _YEAR + _R, re.IGNORECASE)),
-    ("month", re.compile(_L + r"(" + _MONTH + r")[\s,-]+" + _YEAR + _R, re.IGNORECASE)),
-    ("numeric_month", re.compile(_L + r"(\d{1,2})/" + _YEAR + _R)),
+    ("month", re.compile(_L + r"(" + _MONTH + r")\.?[\s,-]+" + _YEAR + _R, re.IGNORECASE)),
     ("year", re.compile(_L + _YEAR + _R)),
 )
 # Text that contains a year but states no date: an Act's own year in any of the ways it
 # is cited, and money. Masked before anything is read.
 NOT_DATES = re.compile(
-    _L + r"(?:sanhita|code|संहिता|act|adhiniyam|अधिनियम|bns|ipc)\s*(?:\([^)]{0,20}\))?\s*,?"
-    r"\s*(?:no\.?\s*\d+\s+of\s+)?(?:18|19|20)\d{2}"
+    _L + r"(?:sanhita|code|संहिता|act|adhiniyam|अधिनियम|bns|ipc)\s*(?:\([^)\d]{0,20}\))?"
+    r"\s*,?\s*\(?\s*(?:no\.?\s*\d+\s+of\s+)?(?:18|19|20)\d{2}\s*\)?"
+    # "FIR 7/2024", "Crl. Appeal 12/2024": a case number, not July or December.
+    r"|(?<![\d/.-])\d{1,5}/(?:18|19|20)\d{2}(?![\d/])"
     r"|" + _L + r"(?:18|19|20)\d{2}\s+(?:sanhita|code|act)" + _R
     + r"|" + _L + r"\d+\s+of\s+(?:18|19|20)\d{2}"
     r"|(?:" + _L + r"(?:rs\.?|inr|rupees?)|₹)\s*[\d,]+(?:\.\d+)?"
     r"|" + _L + r"[\d,]+\s*(?:rupees?|rs\b|/-)",
     re.IGNORECASE)
-_BEFORE = re.compile(r"(?:before|prior\s+to|earlier\s+than)\s+(?:the\s+)?$", re.IGNORECASE)
-_UNTIL = re.compile(r"(?:until|till|up\s+to|upto|by)\s+(?:the\s+)?$", re.IGNORECASE)
-_AFTER = re.compile(r"after\s+(?:the\s+)?$", re.IGNORECASE)
-_SINCE = re.compile(r"(?:since|from|on\s+or\s+after|starting)\s+(?:the\s+)?$",
+# Checked in this order: "not before" must not be read as "before", nor "on or after" as
+# "after", nor "no later than" as a plain date.
+_SINCE = re.compile(r"(?:since|from|on\s+or\s+after|not\s+before|starting)\s+(?:the\s+)?$",
                     re.IGNORECASE)
+_AFTER = re.compile(r"after\s+(?:the\s+)?$", re.IGNORECASE)
+_UNTIL = re.compile(r"(?:until|till|up\s+to|upto|by|on\s+or\s+before|no\s+later\s+than|"
+                    r"not\s+later\s+than)\s+(?:the\s+)?$", re.IGNORECASE)
+_BEFORE = re.compile(r"(?:before|prior\s+to|earlier\s+than)\s+(?:the\s+)?$", re.IGNORECASE)
+# A procedural word at most three words before the date ("filed in", "born in", "trial
+# starts in"). A whole clause is too wide: in "trial starts in 2026 for a slap in July
+# 2024" only 2026 is about the case.
+_PROCEDURAL = re.compile(
+    r"(?:\b(?:born|birth|aged?|filed|registered|lodged|reported|fir|complaint|tried|trial|"
+    r"hearing|judg(?:e)?ment|verdict|convicted|sentenced|arrested|charge-?sheet(?:ed)?|"
+    r"appeal|bail|summons?|decided)\b|जन्म|दर्ज|एफआईआर|मुकदमा|सुनवाई)"
+    r"(?:\s+[^\s.;,:!?]+){0,3}\s*$",
+    re.IGNORECASE)
 _LEFTOVER_MONTH = re.compile(_L + r"(" + _MONTH + r")" + _R, re.IGNORECASE)
 
 
@@ -66,6 +83,8 @@ class Period:
     end: date
     # False for a bare year: weak evidence, see the module docstring.
     specific: bool = True
+    # In a clause about the case, not the offence ("FIR filed in ..."): not evidence.
+    procedural: bool = False
 
 
 @dataclass(frozen=True)
@@ -90,9 +109,8 @@ def _read(kind: str, g: tuple[str, ...]) -> Period | None:
             day = None
         if day is not None:
             return Period(day, day)
-        if kind in ("month", "numeric_month"):
-            month = MONTHS[g[0].lower()] if kind == "month" else int(g[0])
-            year = int(g[1])
+        if kind == "month":
+            month, year = MONTHS[g[0].lower()], int(g[1])
             return Period(date(year, month, 1),
                           date(year, month, calendar.monthrange(year, month)[1]))
         return Period(date(int(g[0]), 1, 1), date(int(g[0]), 12, 31), specific=False)
@@ -101,15 +119,17 @@ def _read(kind: str, g: tuple[str, ...]) -> Period | None:
 
 
 def _bounded(period: Period, before: str) -> Period:
-    if _BEFORE.search(before):
-        return Period(date.min, period.start - timedelta(days=1), period.specific)
-    if _UNTIL.search(before):
-        return Period(date.min, period.end, period.specific)
-    if _AFTER.search(before):
-        return Period(period.end + timedelta(days=1), date.max, period.specific)
+    procedural = _PROCEDURAL.search(before) is not None
+    start, end = period.start, period.end
     if _SINCE.search(before):
-        return Period(period.start, date.max, period.specific)
-    return period
+        end = date.max
+    elif _AFTER.search(before):
+        start, end = period.end + timedelta(days=1), date.max
+    elif _UNTIL.search(before):
+        start = date.min
+    elif _BEFORE.search(before):
+        start, end = date.min, period.start - timedelta(days=1)
+    return Period(start, end, period.specific, procedural)
 
 
 def _blank(text: str, start: int, end: int) -> str:

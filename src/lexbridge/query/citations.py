@@ -22,7 +22,7 @@ CODE_NAMES = {act: re.compile(pattern, re.IGNORECASE) for act, pattern in _CODE.
 # retrieval is section-level. (?!\d) stops "2023" being read as section 202, and a unit
 # after it ("IPC 10 years") means a quantity, not a section.
 _NUMBER = (r"(\d{1,3}[A-Z]{0,3})(?!\d)(?!\s*(?:years?|yrs?|months?|weeks?|days?|hours?|"
-           r"times|persons?|people|offences?|lakhs?|crores?|rupees?)\b)(?:\s*\(\w{1,3}\))*")
+           r"times|persons?|people|lakhs?|crores?|rupees?)\b)(?:\s*\(\w{1,3}\))*")
 _SECTION = r"(?:section|sec\.?|s\.|§|धारा|dhara)"
 _ACT_YEAR = r"(?:\s*,?\s*(?:18|19|20)\d{2})?"
 # Ordered by how tightly the number is bound to its code; a number is claimed once.
@@ -41,7 +41,8 @@ PATTERNS = tuple(
 )
 # Asking what a section became, even when only its own code is named.
 MAP_CUES = re.compile(
-    r"\b(?:replaced|replaces|replacement|equivalent|counterpart|correspond\w*|"
+    r"\b(?:replaced|replaces|replacement|equivalent|counterpart|corresponding|"
+    r"correspond(?:s|ed)?\s+(?:to|with)|"
     r"new\s+(?:law|code|section|sanhita)|old\s+(?:law|code|section))\b|के\s+बदले|नई\s+धारा",
     re.IGNORECASE)
 

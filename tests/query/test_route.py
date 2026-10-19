@@ -24,7 +24,8 @@ def year(y: int) -> Period:
     ("on 30-06-2024", Period(date(2024, 6, 30), date(2024, 6, 30))),
     ("in Sept 2024", Period(date(2024, 9, 1), date(2024, 9, 30))),
     ("in Jun-2024", Period(date(2024, 6, 1), date(2024, 6, 30))),
-    ("in 12/2024", Period(date(2024, 12, 1), date(2024, 12, 31))),
+    ("on 5 Sept. 2024", Period(date(2024, 9, 5), date(2024, 9, 5))),
+    ("on Sep. 5, 2024", Period(date(2024, 9, 5), date(2024, 9, 5))),
     ("in february 2024", Period(date(2024, 2, 1), date(2024, 2, 29))),  # leap year
     ("back in 2019", year(2019)),
     ("मार्च 2024 की घटना", Period(date(2024, 3, 1), date(2024, 3, 31))),
@@ -32,6 +33,9 @@ def year(y: int) -> Period:
     ("before 1 July 2024", Period(date.min, date(2024, 6, 30))),
     ("until 5 August 2024", Period(date.min, date(2024, 8, 5))),
     ("after 30 June 2024", Period(date(2024, 7, 1), date.max)),
+    ("on or after 30 June 2024", Period(date(2024, 6, 30), date.max)),
+    ("not before 1 July 2024", Period(date(2024, 7, 1), date.max)),
+    ("no later than 1 July 2024", Period(date.min, date(2024, 7, 1))),
     ("since August 2024", Period(date(2024, 8, 1), date.max)),
 ])
 def test_a_stated_period_is_read_at_its_precision(text: str, period: Period) -> None:
@@ -52,6 +56,10 @@ def test_a_stated_period_is_read_at_its_precision(text: str, period: Period) -> 
     "2000 rupees were taken",
     "the court may, in March proceedings",  # "may" and "march" as words
     "a 17 year old boy",
+    "FIR No. 7/2024 under IPC",  # a case number, not July
+    "Crl. Appeal 12/2024",
+    "BNS (2023) offence",
+    "Bharatiya Nyaya Sanhita (2023)",
 ])
 def test_an_act_title_an_amount_or_a_word_is_not_a_date(text: str) -> None:
     assert read_dates(text).periods == ()
@@ -88,8 +96,11 @@ def test_a_month_without_its_year_marks_the_reading_incomplete() -> None:
     ("Offence on 5 August 2024 under POCSO Act, 2012", Act.BNS, Reason.DATE),
     ("Bharatiya Nyaya Sanhita (BNS), 2023 section 103 murder", Act.BNS, Reason.NAMED_CODE),
     ("He stole a Rs 2000 note on 5 August 2024", Act.BNS, Reason.DATE),
-    ("Born in 1990, he cheated me on 12 Aug 2024", None, Reason.CONFLICT),
-    ("It started in 2023 and the FIR was filed on 5 August 2024", None, Reason.CONFLICT),
+    # A birth year is procedural, so it neither decides nor conflicts.
+    ("Born in 1990, he cheated me on 12 Aug 2024", Act.BNS, Reason.DATE),
+    ("In 2023 he started cheating; on 12 Aug 2024 he stole", None, Reason.CONFLICT),
+    # The FIR date is about the case; the offence began in 2023.
+    ("It started in 2023 and the FIR was filed on 5 August 2024", Act.IPC, Reason.DATE),
     ("Theft between 15 June and 15 August 2024", None, Reason.INCOMPLETE),
     ("from 3 May to 4 July 2024", None, Reason.INCOMPLETE),
     ("Theft before 1 July 2024", Act.IPC, Reason.DATE),
@@ -97,6 +108,20 @@ def test_a_month_without_its_year_marks_the_reading_incomplete() -> None:
     ("Theft by 5 August 2024", None, Reason.STRADDLES),  # could be either side
     ("१० जून २०२४ को चोरी, FIR 5 July 2024", Act.IPC, Reason.DATE),
     ("Stalking since August 2024", Act.BNS, Reason.DATE),
+    # Second review round.
+    ("FIR No. 7/2024 under IPC", Act.IPC, Reason.NAMED_CODE),
+    ("Criminal Appeal 12/2024 cheating", None, Reason.UNKNOWN),
+    ("BNS (2023) offence in 2025", Act.BNS, Reason.DATE),
+    ("A man born in 1999 committed theft, punishment?", None, Reason.UNPLACED),
+    ("I am 25, born in 1999; he stole my phone", None, Reason.UNPLACED),
+    ("FIR filed in 2025, section 420 IPC", None, Reason.UNPLACED),
+    ("complaint registered in 2025", None, Reason.UNPLACED),
+    ("tried in 2025 for theft", None, Reason.UNPLACED),
+    ("The theft was in May 2024 and the FIR was filed on 5 August 2024", Act.IPC, Reason.DATE),
+    ("not before 1 July 2024", Act.BNS, Reason.DATE),
+    ("no later than 1 July 2024", None, Reason.STRADDLES),
+    ("on or after 30 June 2024", None, Reason.STRADDLES),
+    ("He sent correspondence about IPC 420 on 3 March 2024", Act.IPC, Reason.DATE),
 ])
 def test_the_route(text: str, act: Act | None, reason: Reason) -> None:
     decided = route(understand(text))
@@ -125,6 +150,7 @@ def test_code_names_are_matched_as_words_not_substrings() -> None:
     ("IPC section 420, BNS section 318 comparison", ("IPC:420", "BNS:318")),
     ("IPC 1860 section 420, BNS 2023 section 318", ("IPC:420", "BNS:318")),
     # Quantities and uncoded numbers are not citations.
+    ("IPC 420 offence on 3 March 2024", ("IPC:420",)),
     ("under IPC 7 years sentence", ()),
     ("IPC 10 years imprisonment", ()),
     ("What is the punishment under section 138?", ()),
@@ -144,6 +170,10 @@ def test_a_section_is_a_reference_only_when_its_code_is_named(
     # Only one code named, but the words ask what it became.
     ("What replaced IPC 420?", Act.BNS, Reason.MAP),
     ("IPC 420 under the new law?", Act.BNS, Reason.MAP),
+    ("IPC 420 offence equivalent in BNS", Act.BNS, Reason.MAP),
+    # A cue word alone yields to an offence date; naming the other code does not.
+    ("Is the new law applicable? IPC 420 cheating on 3 March 2024", Act.IPC, Reason.DATE),
+    ("Cheating on 3 March 2024: what is the BNS equivalent of IPC 420?", Act.BNS, Reason.MAP),
     ("What did section 124A of the IPC say?", Act.IPC, Reason.NAMED_CODE),
     ("Is IPC 420 now BNS 318?", None, Reason.UNKNOWN),  # both cited: nothing to choose
 ])
@@ -156,3 +186,10 @@ def test_asking_what_a_section_became_routes_to_the_other_code(
 
 def test_without_maps_the_v2_router_leaves_counterpart_questions_unrouted() -> None:
     assert route(understand("What is the BNS equivalent of IPC 420?")).act is None
+
+
+def test_a_date_route_states_the_period_it_relied_on() -> None:
+    decided = route(understand("Theft on 3 May 2024, FIR filed on 9 August 2024"))
+
+    assert decided.act is Act.IPC
+    assert decided.basis == Period(date(2024, 5, 3), date(2024, 5, 3))
