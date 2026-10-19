@@ -6,9 +6,9 @@ events. A bare four-digit year is weak: it may be the year of an Act, a birth ye
 an amount nobody masked. The router lets weak evidence decide only when nothing
 specific exists, and abstains when the two disagree.
 
-A date in the same clause as a procedural word ("filed", "born", "FIR", "trial") is read
-but is not evidence of when the offence happened: "FIR filed in August 2024" says
-nothing about whether the theft was in June or July.
+A date just after a word about the case ("arrested on", "FIR filed in", "trial in") is
+not the offence date, but it is not nothing either: the case came after the offence, so
+the offence happened on or before it. Birth dates say nothing about the offence.
 """
 
 from __future__ import annotations
@@ -17,6 +17,7 @@ import calendar
 import re
 from dataclasses import dataclass
 from datetime import date, timedelta
+from enum import StrEnum
 
 MONTHS = {
     **{m.lower(): i for i, m in enumerate(calendar.month_name) if m},
@@ -43,6 +44,7 @@ PATTERNS = (
     ("month_day", re.compile(_L + r"(" + _MONTH + r")\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+"
                              + _YEAR + _R, re.IGNORECASE)),
     ("month", re.compile(_L + r"(" + _MONTH + r")\.?[\s,-]+" + _YEAR + _R, re.IGNORECASE)),
+    ("numeric_month", re.compile(_L + r"(\d{1,2})/" + _YEAR + _R)),
     ("year", re.compile(_L + _YEAR + _R)),
 )
 # Text that contains a year but states no date: an Act's own year in any of the ways it
@@ -50,8 +52,11 @@ PATTERNS = (
 NOT_DATES = re.compile(
     _L + r"(?:sanhita|code|संहिता|act|adhiniyam|अधिनियम|bns|ipc)\s*(?:\([^)\d]{0,20}\))?"
     r"\s*,?\s*\(?\s*(?:no\.?\s*\d+\s+of\s+)?(?:18|19|20)\d{2}\s*\)?"
-    # "FIR 7/2024", "Crl. Appeal 12/2024": a case number, not July or December.
-    r"|(?<![\d/.-])\d{1,5}/(?:18|19|20)\d{2}(?![\d/])"
+    # "FIR No. 7/2024", "Crl. Appeal 12/2024": a case number, not July or December. N/YYYY
+    # is a month only when nothing names it a case and N could be a month at all.
+    r"|\b(?:fir|case|appeal|petition|crl|rule|complaint|crime|cc|wp|no)\b\.?\s*[:#]?\s*"
+    r"(?:no\.?\s*)?\d{1,5}/(?:18|19|20)\d{2}(?![\d/])"
+    r"|(?<![\d/.-])(?:1[3-9]|[2-9]\d|\d{3,5})/(?:18|19|20)\d{2}(?![\d/])"
     r"|" + _L + r"(?:18|19|20)\d{2}\s+(?:sanhita|code|act)" + _R
     + r"|" + _L + r"\d+\s+of\s+(?:18|19|20)\d{2}"
     r"|(?:" + _L + r"(?:rs\.?|inr|rupees?)|₹)\s*[\d,]+(?:\.\d+)?"
@@ -65,16 +70,24 @@ _AFTER = re.compile(r"after\s+(?:the\s+)?$", re.IGNORECASE)
 _UNTIL = re.compile(r"(?:until|till|up\s+to|upto|by|on\s+or\s+before|no\s+later\s+than|"
                     r"not\s+later\s+than)\s+(?:the\s+)?$", re.IGNORECASE)
 _BEFORE = re.compile(r"(?:before|prior\s+to|earlier\s+than)\s+(?:the\s+)?$", re.IGNORECASE)
-# A procedural word at most three words before the date ("filed in", "born in", "trial
-# starts in"). A whole clause is too wide: in "trial starts in 2026 for a slap in July
-# 2024" only 2026 is about the case.
-_PROCEDURAL = re.compile(
-    r"(?:\b(?:born|birth|aged?|filed|registered|lodged|reported|fir|complaint|tried|trial|"
-    r"hearing|judg(?:e)?ment|verdict|convicted|sentenced|arrested|charge-?sheet(?:ed)?|"
-    r"appeal|bail|summons?|decided)\b|जन्म|दर्ज|एफआईआर|मुकदमा|सुनवाई)"
-    r"(?:\s+[^\s.;,:!?]+){0,3}\s*$",
-    re.IGNORECASE)
+# A cue word at most three words before the date ("filed in", "born in", "trial starts
+# in"). A whole clause is too wide: in "trial starts in 2026 for a slap in July 2024"
+# only 2026 is about the case.
+_NEAR = r"(?:\s+[^\s.;,:!?]+){0,3}\s*$"
+_BIRTH = re.compile(r"(?:\b(?:born|birth|aged?|dob)\b|जन्म)" + _NEAR, re.IGNORECASE)
+_CASE = re.compile(
+    r"(?:\b(?:filed|registered|lodged|reported|fir|complaint|tried|trial|hearing|"
+    r"judg(?:e)?ment|verdict|convicted|sentenced|arrested|charge-?sheet(?:ed)?|appeal|"
+    r"bail|summons?|decided)\b|दर्ज|एफआईआर|मुकदमा|सुनवाई)" + _NEAR, re.IGNORECASE)
 _LEFTOVER_MONTH = re.compile(_L + r"(" + _MONTH + r")" + _R, re.IGNORECASE)
+
+
+class Role(StrEnum):
+    EVENT = "event"  # nothing says it is not the offence: evidence
+    # A step in the case ("arrested on", "FIR filed in"). It came after the offence, so it
+    # is a ceiling on the offence date, not the date itself.
+    CASE = "case"
+    BIRTH = "birth"  # before the offence and says nothing about it
 
 
 @dataclass(frozen=True)
@@ -83,8 +96,7 @@ class Period:
     end: date
     # False for a bare year: weak evidence, see the module docstring.
     specific: bool = True
-    # In a clause about the case, not the offence ("FIR filed in ..."): not evidence.
-    procedural: bool = False
+    role: Role = Role.EVENT
 
 
 @dataclass(frozen=True)
@@ -109,8 +121,9 @@ def _read(kind: str, g: tuple[str, ...]) -> Period | None:
             day = None
         if day is not None:
             return Period(day, day)
-        if kind == "month":
-            month, year = MONTHS[g[0].lower()], int(g[1])
+        if kind in ("month", "numeric_month"):
+            month = MONTHS[g[0].lower()] if kind == "month" else int(g[0])
+            year = int(g[1])
             return Period(date(year, month, 1),
                           date(year, month, calendar.monthrange(year, month)[1]))
         return Period(date(int(g[0]), 1, 1), date(int(g[0]), 12, 31), specific=False)
@@ -119,7 +132,8 @@ def _read(kind: str, g: tuple[str, ...]) -> Period | None:
 
 
 def _bounded(period: Period, before: str) -> Period:
-    procedural = _PROCEDURAL.search(before) is not None
+    role = (Role.BIRTH if _BIRTH.search(before)
+            else Role.CASE if _CASE.search(before) else Role.EVENT)
     start, end = period.start, period.end
     if _SINCE.search(before):
         end = date.max
@@ -129,7 +143,7 @@ def _bounded(period: Period, before: str) -> Period:
         start = date.min
     elif _BEFORE.search(before):
         start, end = date.min, period.start - timedelta(days=1)
-    return Period(start, end, period.specific, procedural)
+    return Period(start, end, period.specific, role)
 
 
 def _blank(text: str, start: int, end: int) -> str:

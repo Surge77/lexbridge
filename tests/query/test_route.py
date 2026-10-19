@@ -25,6 +25,7 @@ def year(y: int) -> Period:
     ("in Sept 2024", Period(date(2024, 9, 1), date(2024, 9, 30))),
     ("in Jun-2024", Period(date(2024, 6, 1), date(2024, 6, 30))),
     ("on 5 Sept. 2024", Period(date(2024, 9, 5), date(2024, 9, 5))),
+    ("in 12/2024", Period(date(2024, 12, 1), date(2024, 12, 31))),  # no case word before
     ("on Sep. 5, 2024", Period(date(2024, 9, 5), date(2024, 9, 5))),
     ("in february 2024", Period(date(2024, 2, 1), date(2024, 2, 29))),  # leap year
     ("back in 2019", year(2019)),
@@ -122,6 +123,17 @@ def test_a_month_without_its_year_marks_the_reading_incomplete() -> None:
     ("no later than 1 July 2024", None, Reason.STRADDLES),
     ("on or after 30 June 2024", None, Reason.STRADDLES),
     ("He sent correspondence about IPC 420 on 3 March 2024", Act.IPC, Reason.DATE),
+    # Third round: a step in the case is a ceiling on the offence date.
+    ("He was arrested for stealing on 3 March 2024 and the court took cognizance on "
+     "10 Sept 2024", None, Reason.CONFLICT),
+    ("convicted of theft on 3 March 2024; appeal pending in the High Court on 5 Aug 2025",
+     None, Reason.CONFLICT),
+    ("sentenced for theft on 3 March 2024", Act.IPC, Reason.CEILING),
+    ("arrested for theft on 5 Aug 2024", None, Reason.UNPLACED),  # offence could be June
+    ("A theft in 2024; he was arrested on 3 March 2024", Act.IPC, Reason.DATE),
+    ("juvenile born on 5 Aug 2007 stole a phone on 3 March 2024", Act.IPC, Reason.DATE),
+    ("IPC 420 offence in 12/2024", Act.BNS, Reason.DATE),
+    ("BNS 318 offence 3/2024", Act.IPC, Reason.DATE),
 ])
 def test_the_route(text: str, act: Act | None, reason: Reason) -> None:
     decided = route(understand(text))
