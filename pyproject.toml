@@ -25,6 +25,9 @@ dependencies = [
     # (see .github/workflows/ci.yml); the default Linux wheel bundles CUDA.
     "sentence-transformers==6.1.0",
     "torch==2.14.1",
+    # LLM calls. Groq and Gemini both speak the OpenAI chat-completions shape, so one
+    # HTTP client replaces two vendor SDKs.
+    "httpx==0.28.1",
 ]
 
 [project.optional-dependencies]
