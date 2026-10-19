@@ -3,12 +3,13 @@
   "retriever": "dense",
   "embedder": "bge-m3@5617a9f6.15abf2",
   "parameters": 567754752,
-  "index_seconds": 518.5,
+  "index_seconds": 0.0,
   "bundle_sections_sha256": "dbe1705d398839a90e724f63494c24dddb023e0b8ea82c14840382dea202ba5f",
   "golden_sha256": "7215b78215ff27dac69275e2e21ff2f2a69752e8f0d8acebc40c46427ff2f9a4",
+  "note": "Chosen embedder: +12.6 macro hit@5 over e5-small for 9x the query latency; on the hand-written cases it finds 10 answers e5 misses and misses 2 that e5 finds. See docs/decisions/0002-bge-m3-for-dense-retrieval.md.",
   "query_ms": {
-    "p50": 110.47,
-    "p95": 147.22
+    "p50": 105.77,
+    "p95": 133.89
   },
   "scores": {
     "boundary": {

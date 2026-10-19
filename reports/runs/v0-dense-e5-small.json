@@ -3,12 +3,13 @@
   "retriever": "dense",
   "embedder": "e5-small@614241f6.edf768",
   "parameters": 117653760,
-  "index_seconds": 42.8,
+  "index_seconds": 0.0,
   "bundle_sections_sha256": "dbe1705d398839a90e724f63494c24dddb023e0b8ea82c14840382dea202ba5f",
   "golden_sha256": "7215b78215ff27dac69275e2e21ff2f2a69752e8f0d8acebc40c46427ff2f9a4",
+  "note": "",
   "query_ms": {
-    "p50": 12.53,
-    "p95": 15.98
+    "p50": 16.2,
+    "p95": 20.02
   },
   "scores": {
     "boundary": {

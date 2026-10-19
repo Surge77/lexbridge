@@ -12,10 +12,11 @@ each, one question moves them by 4-17 points.
 
 ## Overall (macro)
 
-| run | embedder | hit@1 | hit@5 | hit@10 | MRR | wrong-regime@1 | query p50 / p95 ms |
-|---|---|---:|---:|---:|---:|---:|---:|
-| v0-dense-bge-m3 | bge-m3@5617a9f6.15abf2 | 36.9 | 64.3 | 78.1 | 49.3 | 25.6 | 110.47 / 147.22 |
-| v0-dense-e5-small | e5-small@614241f6.edf768 | 32.2 | 51.7 | 62.4 | 41.7 | 18.6 | 12.53 / 15.98 |
+| run | stages | embedder | hit@1 | hit@5 | hit@10 | MRR | wrong-regime@1 | query p50 / p95 ms |
+|---|---|---|---:|---:|---:|---:|---:|---:|
+| v0-dense-bge-m3 | dense | bge-m3@5617a9f6.15abf2 | 36.9 | 64.3 | 78.1 | 49.3 | 25.6 | 105.77 / 133.89 |
+| v0-dense-e5-small | dense | e5-small@614241f6.edf768 | 32.2 | 51.7 | 62.4 | 41.7 | 18.6 | 16.2 / 20.02 |
+| v1-hybrid | dense+bm25/rrf | bge-m3@5617a9f6.15abf2 | 36.5 | 62.5 | 76.8 | 47.6 | 12.2 | 733.89 / 1904.14 |
 
 ## hit@5 by category
 
@@ -23,5 +24,11 @@ each, one question moves them by 4-17 points.
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | v0-dense-bge-m3 | 66.7 | 30.0 | 53.6 | 0.3 | 1.3 | 87.3 | 98.3 | 50.0 |
 | v0-dense-e5-small | 50.0 | 20.0 | 39.3 | 0.6 | 1.7 | 79.7 | 96.0 | 25.0 |
+| v1-hybrid | 50.0 | 30.0 | 46.4 | 0.0 | 1.3 | 89.3 | 96.6 | 62.5 |
 
 Cases per category: boundary 6, hindi 10, lay 28, map_bns_to_ipc 348, map_ipc_to_bns 534, topic_dated 355, topic_undated 177, tricky 8.
+
+## Decisions
+
+- **v0-dense-bge-m3**: Chosen embedder: +12.6 macro hit@5 over e5-small for 9x the query latency; on the hand-written cases it finds 10 answers e5 misses and misses 2 that e5 finds. See docs/decisions/0002-bge-m3-for-dense-retrieval.md.
+- **v1-hybrid**: Not kept. Macro hit@5 fell 64.3 -> 62.5 (lay lost 2 cases, tricky gained 1), and as a candidate generator it found no more: recall@20 84.3 vs 83.6, recall@50 87.6 vs 88.1. Its halved wrong-regime@1 is incidental; BM25 knows nothing of dates. Later rungs build on dense alone; the code stays so this row reproduces.
