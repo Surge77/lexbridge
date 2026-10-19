@@ -10,9 +10,11 @@ Usage:
 
 from __future__ import annotations
 
+import json
 import time
 from collections import defaultdict
 from collections.abc import Callable, Sequence
+from pathlib import Path
 from statistics import fmean, quantiles
 from typing import TypedDict
 
@@ -128,10 +130,24 @@ def code_of(act: Act | None) -> str | None:
     return act.value if act else None
 
 
+def load_checkpoint(path: Path) -> dict[str, Outcome]:
+    """Outcomes already paid for by an earlier, interrupted run of the same name."""
+    if not path.exists():
+        return {}
+    outcomes: list[Outcome] = [json.loads(line) for line in
+                               path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    return {o["id"]: o for o in outcomes}
+
+
+def append_checkpoint(path: Path, outcome: Outcome) -> None:
+    # One line per answer, written as it arrives: a long rate-limited run that is
+    # interrupted loses one answer, not all of them.
+    with path.open("a", encoding="utf-8", newline="\n") as f:
+        f.write(json.dumps(outcome, ensure_ascii=False) + "\n")
+
+
 def main() -> None:  # pragma: no cover - calls a real model over the network
     import argparse
-    import json
-    from pathlib import Path
 
     from lexbridge.answer.llm import PROVIDERS, Gateway, LLMUnavailableError
     from lexbridge.answer.service import answer
@@ -170,20 +186,26 @@ def main() -> None:  # pragma: no cover - calls a real model over the network
                 "final_unsupported": unsupported(a.text, a.allowed),
                 "calls": len(a.calls), "seconds": round(time.perf_counter() - start, 2)}
 
-    outcomes = []
-    for i, case in enumerate(cases, 1):
-        outcomes.append(with_patience(lambda case=case: run(case),
-                                      retry_on=LLMUnavailableError))
-        print(f"{i}/{len(cases)} {case.id} -> {outcomes[-1]['status']}", flush=True)
-
     name = args.name or f"gen-{args.pipeline}"
     out = Path("reports/generation") / f"{name}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
+    progress = out.with_suffix(".partial.jsonl")
+    done = load_checkpoint(progress)
+    outcomes = []
+    for i, case in enumerate(cases, 1):
+        if case.id not in done:
+            done[case.id] = with_patience(lambda case=case: run(case),
+                                          retry_on=LLMUnavailableError)
+            append_checkpoint(progress, done[case.id])
+        outcomes.append(done[case.id])
+        print(f"{i}/{len(cases)} {case.id} -> {outcomes[-1]['status']}", flush=True)
+
     record = {"name": name, "pipeline": args.pipeline, "providers": chat.providers,
               "model": PROVIDERS["groq"].model, "scores": score(cases, outcomes),
               "by_category": by_category(cases, outcomes), "outcomes": outcomes}
     out.write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\n",
                    encoding="utf-8", newline="\n")
+    progress.unlink()
     print(json.dumps(record["scores"], indent=2))
 
 

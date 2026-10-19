@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date
+from pathlib import Path
 
 import pytest
 
@@ -8,9 +9,11 @@ from lexbridge.eval.cases import Case, Category
 from lexbridge.eval.generation import (
     PER_GENERATED,
     Outcome,
+    append_checkpoint,
     by_category,
     code_of,
     expected_status,
+    load_checkpoint,
     score,
     subset,
     with_patience,
@@ -127,3 +130,15 @@ def test_patience_gives_up_after_the_last_wait() -> None:
 
 def test_codes_are_recorded_as_plain_strings() -> None:
     assert (code_of(Act.IPC), code_of(None)) == ("IPC", None)
+
+
+def test_an_interrupted_run_resumes_from_its_checkpoint(tmp_path: Path) -> None:
+    progress = tmp_path / "gen.partial.jsonl"
+    assert load_checkpoint(progress) == {}
+
+    first, second = outcome("answered"), outcome("clarify", act=None)
+    first["id"], second["id"] = "lay-1", "lay-2"
+    append_checkpoint(progress, first)
+    append_checkpoint(progress, second)
+
+    assert load_checkpoint(progress) == {"lay-1": first, "lay-2": second}
