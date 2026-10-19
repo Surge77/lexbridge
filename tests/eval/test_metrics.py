@@ -5,7 +5,7 @@ from datetime import date
 import pytest
 
 from lexbridge.eval.cases import Case, Category
-from lexbridge.eval.metrics import MACRO, first_rank, score
+from lexbridge.eval.metrics import MACRO, first_rank, routing, score
 from lexbridge.schema import Act
 
 
@@ -88,3 +88,17 @@ def test_map_lookups_are_scored_but_kept_out_of_the_text_macro() -> None:
     assert scores["map_ipc_to_bns"].hit[1] == 0
     assert scores[MACRO].hit[1] == 1
     assert scores[MACRO].n == 1
+
+
+def test_routing_separates_confident_errors_from_asking() -> None:
+    undated = Case(id="u-1", category=Category.TOPIC_UNDATED, question="theft?",
+                   offence_date=None, answer_act=None, targets=("IPC:378", "BNS:303"),
+                   wrong_regime=(), needs_clarification=True)
+    declined = Case(id="o-1", category=Category.OUT_OF_SCOPE, question="poem",
+                    offence_date=None, answer_act=None, targets=(), wrong_regime=(),
+                    needs_clarification=False)
+    decisions = {"q1": Act.IPC, "q2": Act.BNS, "q3": None, "theft?": Act.BNS, "poem": Act.IPC}
+
+    counts = routing([dated(n=1), dated(n=2), dated(n=3), undated, declined], decisions.get)
+
+    assert counts == {"correct": 1, "wrong": 1, "unrouted": 1, "over_routed": 1}

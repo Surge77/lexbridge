@@ -53,6 +53,8 @@ class RunRecord(Measured):
     golden_sha256: str
     # The rung's decision; absent from runs recorded before notes existed.
     note: NotRequired[str]
+    # Router decisions against the golden codes, for pipelines that route.
+    routing: NotRequired[dict[str, int]]
 
 
 def _latency_sample(cases: Sequence[Case]) -> list[str]:
@@ -116,11 +118,15 @@ def main() -> None:  # pragma: no cover - loads a real model
     from lexbridge.bundle import load_bundle
     from lexbridge.eval.cases import read_cases
     from lexbridge.eval.golden import GOLDEN
+    from lexbridge.eval.metrics import routing
     from lexbridge.eval.report import write_table
+    from lexbridge.query.route import route
+    from lexbridge.query.understand import understand
     from lexbridge.retrieve.bm25 import BM25Index
     from lexbridge.retrieve.dense import DenseIndex
     from lexbridge.retrieve.embed import SentenceTransformerEmbedder
     from lexbridge.retrieve.pipeline import PIPELINES, Pipeline
+    from lexbridge.retrieve.rerank import CrossEncoderScorer
 
     parser = argparse.ArgumentParser()
     parser.add_argument("bundle", type=Path)
@@ -134,18 +140,25 @@ def main() -> None:  # pragma: no cover - loads a real model
     dense = DenseIndex.build(bundle, embedder, cache_dir=args.bundle / "vectors")
     lexical = BM25Index.build(bundle) if spec.lexical else None
     index_seconds = round(time.perf_counter() - start, 1)
-    pipeline = Pipeline(dense, lexical)
+    scorer = CrossEncoderScorer(spec.reranker) if spec.reranker else None
+    pipeline = Pipeline(bundle, dense, lexical=lexical, scorer=scorer,
+                        rerank_depth=spec.rerank_depth, routed=spec.route,
+                        references=spec.references)
+    cases = read_cases(GOLDEN)
     record: RunRecord = {
         "name": args.pipeline,
         "retriever": spec.describe(),
         "embedder": embedder.name,
-        "parameters": embedder.parameters,
+        "parameters": embedder.parameters + (scorer.parameters if scorer else 0),
         "index_seconds": index_seconds,
         "bundle_sections_sha256": bundle.sections_sha256,
         "golden_sha256": sha256_of(GOLDEN),
         "note": spec.note,
-        **evaluate(pipeline, read_cases(GOLDEN)),
+        **evaluate(pipeline, cases),
     }
+    if spec.route:
+        record["routing"] = routing(
+            cases, lambda q: route(understand(q), maps=spec.references).act)
     print(write_run(record), "->", write_table())
 
 

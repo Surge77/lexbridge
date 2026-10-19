@@ -62,7 +62,8 @@ def test_rrf_breaks_ties_in_favour_of_the_first_list() -> None:
 
 def test_the_hybrid_pipeline_fuses_dense_and_lexical(bundle: Bundle) -> None:
     dense = DenseIndex.build(bundle, WordsEmbedder())
-    plain, hybrid = Pipeline(dense), Pipeline(dense, BM25Index.build(bundle))
+    plain = Pipeline(bundle, dense)
+    hybrid = Pipeline(bundle, dense, lexical=BM25Index.build(bundle))
 
     assert len(plain.search("theft", k=2)) == 2
     assert hybrid.search("snatching seizes", k=1)[0].section_id == "BNS:304"

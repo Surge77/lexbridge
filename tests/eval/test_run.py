@@ -88,3 +88,12 @@ def test_a_rung_decision_is_rendered_under_its_name(tmp_path: Path) -> None:
     run["note"] = "Not kept: no gain."
 
     assert "- **v1-b**: Not kept: no gain." in render([record(tmp_path, "v0-a"), run])
+
+
+def test_routing_errors_render_as_a_count_out_of_the_total(tmp_path: Path) -> None:
+    run = record(tmp_path, "v2-a")
+    run["routing"] = {"correct": 590, "wrong": 1, "over_routed": 1, "unrouted": 3}
+
+    row = next(line for line in render([run]).splitlines() if line.startswith("| v2-a"))
+
+    assert " | 2 / 595 | " in row
