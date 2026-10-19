@@ -10,7 +10,7 @@ import pytest
 from lexbridge.bundle import Bundle
 from lexbridge.retrieve.base import Hit
 from lexbridge.retrieve.dense import DenseIndex
-from lexbridge.retrieve.pipeline import PIPELINES, Pipeline, PipelineSpec
+from lexbridge.retrieve.pipeline import CITED_SCORE, PIPELINES, Pipeline, PipelineSpec
 from lexbridge.retrieve.rerank import RERANKERS, CrossEncoderScorer, rerank
 
 from ..eval.factory import build_bundle
@@ -129,7 +129,7 @@ def test_an_unmapped_or_unknown_citation_adds_nothing(bundle: Bundle) -> None:
 
     # IPC 124A has no BNS counterpart in the table, and IPC 999 does not exist.
     for question in ("BNS equivalent of IPC 124A?", "What did IPC 999 say?"):
-        assert all(h.score != float("inf") for h in pipeline.search(question, k=5))
+        assert all(h.score != CITED_SCORE for h in pipeline.search(question, k=5))
 
 
 def test_a_resolved_citation_skips_the_reranker(bundle: Bundle) -> None:

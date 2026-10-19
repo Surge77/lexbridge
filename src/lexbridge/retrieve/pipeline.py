@@ -11,7 +11,6 @@ sections that can be right.
 
 from __future__ import annotations
 
-import math
 from collections.abc import Sequence
 from dataclasses import dataclass
 
@@ -27,6 +26,9 @@ from lexbridge.retrieve.rerank import Scorer, rerank
 # How deep each first-stage list goes before fusion, filtering and cutting to k. Deep
 # enough that routing away the other code's half still leaves a full top 10.
 CANDIDATES = 50
+# The score of a cited section: above any cosine, BM25, RRF or cross-encoder score, and
+# finite, because infinity is not valid JSON and these scores will reach an API response.
+CITED_SCORE = 1e9
 
 
 @dataclass(frozen=True)
@@ -120,8 +122,8 @@ class Pipeline:
         act = route(facts, maps=self._references).act if self._routed else None
         if act:
             hits = [h for h in hits if h.section_id.startswith(f"{act}:")]
-        # An exact lookup outranks any similarity score.
-        cited = [Hit(s, math.inf) for s in self._resolve(facts, act)] if self._references else []
+        resolved = self._resolve(facts, act) if self._references else []
+        cited = [Hit(s, CITED_SCORE) for s in resolved]
         # When the question cites its answer, reranking the rest is cost with no benefit.
         if self._scorer and not cited:
             texts = [self._bundle.section(h.section_id).text for h in hits[:self._rerank_depth]]
