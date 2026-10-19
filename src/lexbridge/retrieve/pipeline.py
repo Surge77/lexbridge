@@ -64,11 +64,23 @@ PIPELINES = {
         "Later rungs build on dense alone; the code stays so this row reproduces.")),
     # Deterministic stages are measured before the expensive model, so the reranker has to
     # earn its latency on top of them rather than take credit for what routing fixes.
-    "v2-route": PipelineSpec("bge-m3", route=True),
-    "v3-references": PipelineSpec("bge-m3", route=True, references=True),
+    "v2-route": PipelineSpec("bge-m3", route=True, note=(
+        "Kept. hit@1 36.9 -> 52.0 on the text categories: 131 cases gained, none lost "
+        "(sign test p ~ 1e-40). wrong-regime@1 25.6 -> 0. The router decided 584 of 584 "
+        "in-scope non-map questions correctly with no confident error; map lookups name "
+        "both codes and are left unrouted at this rung.")),
+    "v3-references": PipelineSpec("bge-m3", route=True, references=True, note=(
+        "Kept; the default pipeline. Map lookups 1% -> 100% hit@5, close to by construction "
+        "(the same project wrote the templates and the citation patterns; unit tests carry "
+        "other phrasings). Text macro hit@5 +2.1 from cited sections in tricky questions. "
+        "The router now decides all 1,466 in-scope questions with no confident error.")),
     # Depth 10 is set by the latency budget (about 1 s of CPU), not tuned on the golden set.
     "v4-rerank": PipelineSpec("bge-m3", route=True, references=True,
-                              reranker="mminilm-l12", rerank_depth=10),
+                              reranker="mminilm-l12", rerank_depth=10, note=(
+        "Not in the default pipeline yet. Text macro hit@5 +4.2 (10 cases gained, 2 lost, "
+        "p ~ 0.04; hand-written +5/-1, not significant; hit@1 +47/-37, not significant) for "
+        "query p50 100 -> 1,294 ms. Decided in P5 on answer quality and on the deploy host's "
+        "latency. bge-reranker-v2-m3 took 15 s per query and was not run.")),
 }
 
 
