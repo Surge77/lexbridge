@@ -45,11 +45,26 @@ DATE_PATTERNS = (
 ACT_TITLE_YEAR = re.compile(
     r"(?:sanhita|code|संहिता|act|bns|ipc)\s*,?\s*(?:1860|2023)"
     r"|\d+\s+of\s+(?:18|19|20)\d{2}", re.IGNORECASE)
-CODE_NAMES = {
-    Act.IPC: re.compile(r"\bIPC\b|indian\s+penal\s+code|भारतीय\s+दंड\s+संहिता|आईपीसी",
-                        re.IGNORECASE),
-    Act.BNS: re.compile(r"\bBNS\b|(?:bharatiya\s+)?nyaya\s+sanhita|भारतीय\s+न्याय\s+संहिता|"
-                        r"बीएनएस", re.IGNORECASE),
+_CODE = {
+    Act.IPC: r"\bIPC\b|indian\s+penal\s+code|भारतीय\s+दंड\s+संहिता|आईपीसी",
+    Act.BNS: r"\bBNS\b|(?:bharatiya\s+)?nyaya\s+sanhita|भारतीय\s+न्याय\s+संहिता|बीएनएस",
+}
+CODE_NAMES = {act: re.compile(pattern, re.IGNORECASE) for act, pattern in _CODE.items()}
+# A section number as cited: 420, 498A, 318(4). The sub-section is read past, not kept:
+# retrieval is section-level. (?!\d) stops "2023" being read as section 202.
+_NUMBER = r"(\d{1,3}[A-Z]{0,3})(?!\d)(?:\s*\(\w{1,3}\))*"
+_SECTION_WORD = r"(?:section|sec\.?|s\.|§|धारा|dhara)"
+REFERENCE_PATTERNS = {
+    act: (
+        # "IPC 420", "BNS section 303", "IPC s. 498A"
+        re.compile(rf"(?:{code})\s*{_SECTION_WORD}?\s*{_NUMBER}\b", re.IGNORECASE),
+        # "section 124A of the IPC", "Section 303 BNS", "धारा 420 आईपीसी"
+        re.compile(rf"{_SECTION_WORD}\s*{_NUMBER}\s*,?\s*(?:of\s+(?:the\s+)?)?(?:{code})",
+                   re.IGNORECASE),
+        # "420 IPC"
+        re.compile(rf"(?<![\w(]){_NUMBER}\s+(?:of\s+(?:the\s+)?)?(?:{code})", re.IGNORECASE),
+    )
+    for act, code in _CODE.items()
 }
 
 
@@ -63,6 +78,9 @@ class Period:
 class Facts:
     periods: tuple[Period, ...]
     codes: frozenset[Act]
+    # Sections cited with their code, as ids ("IPC:420"), in order of first mention. A bare
+    # "section 138" names no code, so it is not a reference to either.
+    references: tuple[str, ...] = ()
 
 
 def _period(kind: str, groups: tuple[str, ...]) -> Period | None:
@@ -101,6 +119,17 @@ def periods(text: str) -> tuple[Period, ...]:
     return tuple(p for _, p in sorted(found, key=lambda pair: pair[0]))
 
 
+def references(text: str) -> tuple[str, ...]:
+    found = sorted(
+        (match.start(), f"{act}:{match.group(1).upper()}")
+        for act, patterns in REFERENCE_PATTERNS.items()
+        for pattern in patterns
+        for match in pattern.finditer(text)
+    )
+    return tuple(dict.fromkeys(section for _, section in found))
+
+
 def understand(text: str) -> Facts:
     return Facts(periods=periods(text),
-                 codes=frozenset(act for act, name in CODE_NAMES.items() if name.search(text)))
+                 codes=frozenset(act for act, name in CODE_NAMES.items() if name.search(text)),
+                 references=references(text))

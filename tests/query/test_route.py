@@ -73,3 +73,39 @@ def test_code_names_are_matched_as_words_not_substrings() -> None:
     assert understand("RECIPE for the BNSX").codes == frozenset()
     assert understand("Bharatiya Nyaya Sanhita and the Indian Penal Code").codes == {
         Act.BNS, Act.IPC}
+
+
+@pytest.mark.parametrize(("text", "cited"), [
+    ("What is the BNS equivalent of IPC section 420?", ("IPC:420",)),
+    ("Which BNS section replaced section 302 of the Indian Penal Code?", ("IPC:302",)),
+    ("Section 303 BNS corresponds to which IPC section?", ("BNS:303",)),
+    ("Is 498a IPC still there?", ("IPC:498A",)),
+    ("IPC s. 376DB and BNS 318(4)", ("IPC:376DB", "BNS:318")),
+    ("धारा 420 आईपीसी क्या है?", ("IPC:420",)),
+    # No code named: a cheque-bounce section 138 belongs to neither code.
+    ("What is the punishment under section 138?", ()),
+    ("under section 82 of Act 2 of 1974", ()),
+    ("What does BNS 2023 say?", ()),  # the year of the Act, not section 202
+])
+def test_a_section_is_a_reference_only_when_its_code_is_named(
+        text: str, cited: tuple[str, ...]) -> None:
+    assert understand(text).references == cited
+
+
+@pytest.mark.parametrize(("text", "act", "reason"), [
+    ("What is the BNS equivalent of IPC section 420?", Act.BNS, Reason.MAP),
+    ("What was BNS 303 under the old Indian Penal Code?", Act.IPC, Reason.MAP),
+    # Asking for the counterpart decides the code, whatever date is also given.
+    ("Theft in 2023: what is the BNS equivalent of IPC 379?", Act.BNS, Reason.MAP),
+    ("What did section 124A of the IPC say?", Act.IPC, Reason.NAMED_CODE),
+    ("Is IPC 420 now BNS 318?", None, Reason.UNKNOWN),  # both cited: nothing to choose
+])
+def test_citing_one_code_and_naming_the_other_asks_for_the_counterpart(
+        text: str, act: Act | None, reason: Reason) -> None:
+    decided = route(understand(text), maps=True)
+
+    assert (decided.act, decided.reason) == (act, reason)
+
+
+def test_without_maps_the_v3_router_leaves_counterpart_questions_unrouted() -> None:
+    assert route(understand("What is the BNS equivalent of IPC 420?")).act is None
