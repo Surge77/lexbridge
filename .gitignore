@@ -24,3 +24,6 @@ dist/
 
 # Built bundles are reproducible from the pinned PDFs (python -m lexbridge.ingest.package).
 artifacts/
+
+# Checkpoints of an interrupted generation eval; removed when the run completes.
+reports/generation/*.partial.jsonl

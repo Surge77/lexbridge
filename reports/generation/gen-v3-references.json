@@ -1,0 +1,1646 @@
+{
+  "name": "gen-v3-references",
+  "pipeline": "v3-references",
+  "providers": [
+    "groq",
+    "groq-large"
+  ],
+  "models": {
+    "openai/gpt-oss-120b": 84,
+    "openai/gpt-oss-20b": 8
+  },
+  "scores": {
+    "n": 92,
+    "hallucinated": 0.0,
+    "first_draft_unsupported": 0.0,
+    "correct_section": 0.7966,
+    "right_code": 1.0,
+    "clarify_precision": 1.0,
+    "clarify_recall": 1.0,
+    "out_of_scope_declined": 1.0,
+    "in_scope_declined": 0.1071,
+    "seconds_p50": 0.94,
+    "seconds_p95": 1.29
+  },
+  "by_category": {
+    "boundary": {
+      "n": 6,
+      "hallucinated": 0.0,
+      "first_draft_unsupported": 0.0,
+      "correct_section": 1.0,
+      "right_code": 1.0,
+      "clarify_precision": 1.0,
+      "clarify_recall": 1.0,
+      "out_of_scope_declined": null,
+      "in_scope_declined": 0.3333,
+      "seconds_p50": 0.91,
+      "seconds_p95": 1.3
+    },
+    "hindi": {
+      "n": 10,
+      "hallucinated": 0.0,
+      "first_draft_unsupported": 0.0,
+      "correct_section": 0.3333,
+      "right_code": 1.0,
+      "clarify_precision": 1.0,
+      "clarify_recall": 1.0,
+      "out_of_scope_declined": null,
+      "in_scope_declined": 0.4,
+      "seconds_p50": 0.88,
+      "seconds_p95": 1.09
+    },
+    "lay": {
+      "n": 28,
+      "hallucinated": 0.0,
+      "first_draft_unsupported": 0.0,
+      "correct_section": 0.7727,
+      "right_code": 1.0,
+      "clarify_precision": 1.0,
+      "clarify_recall": 1.0,
+      "out_of_scope_declined": null,
+      "in_scope_declined": 0.1071,
+      "seconds_p50": 0.95,
+      "seconds_p95": 1.49
+    },
+    "map_bns_to_ipc": {
+      "n": 8,
+      "hallucinated": 0.0,
+      "first_draft_unsupported": 0.0,
+      "correct_section": 0.875,
+      "right_code": 1.0,
+      "clarify_precision": null,
+      "clarify_recall": null,
+      "out_of_scope_declined": null,
+      "in_scope_declined": 0.0,
+      "seconds_p50": 1.09,
+      "seconds_p95": 1.19
+    },
+    "map_ipc_to_bns": {
+      "n": 8,
+      "hallucinated": 0.0,
+      "first_draft_unsupported": 0.0,
+      "correct_section": 0.875,
+      "right_code": 1.0,
+      "clarify_precision": null,
+      "clarify_recall": null,
+      "out_of_scope_declined": null,
+      "in_scope_declined": 0.0,
+      "seconds_p50": 1.02,
+      "seconds_p95": 1.46
+    },
+    "out_of_scope": {
+      "n": 8,
+      "hallucinated": 0.0,
+      "first_draft_unsupported": 0.0,
+      "correct_section": null,
+      "right_code": null,
+      "clarify_precision": null,
+      "clarify_recall": null,
+      "out_of_scope_declined": 1.0,
+      "in_scope_declined": null,
+      "seconds_p50": 0.76,
+      "seconds_p95": 1.04
+    },
+    "topic_dated": {
+      "n": 8,
+      "hallucinated": 0.0,
+      "first_draft_unsupported": 0.0,
+      "correct_section": 1.0,
+      "right_code": 1.0,
+      "clarify_precision": null,
+      "clarify_recall": null,
+      "out_of_scope_declined": null,
+      "in_scope_declined": 0.0,
+      "seconds_p50": 0.92,
+      "seconds_p95": 1.05
+    },
+    "topic_undated": {
+      "n": 8,
+      "hallucinated": 0.0,
+      "first_draft_unsupported": 0.0,
+      "correct_section": null,
+      "right_code": null,
+      "clarify_precision": 1.0,
+      "clarify_recall": 1.0,
+      "out_of_scope_declined": null,
+      "in_scope_declined": 0.0,
+      "seconds_p50": 0.71,
+      "seconds_p95": 1.05
+    },
+    "tricky": {
+      "n": 8,
+      "hallucinated": 0.0,
+      "first_draft_unsupported": 0.0,
+      "correct_section": 0.625,
+      "right_code": 1.0,
+      "clarify_precision": null,
+      "clarify_recall": null,
+      "out_of_scope_declined": null,
+      "in_scope_declined": 0.0,
+      "seconds_p50": 0.97,
+      "seconds_p95": 1.16
+    }
+  },
+  "outcomes": [
+    {
+      "id": "lay-b0966e8a95",
+      "category": "lay",
+      "status": "declined",
+      "act": "IPC",
+      "citations": [],
+      "text": "The provided sections do not cover theft or taking a phone from a bag; they address stalking, electronic sexual harassment, kidnapping minors for begging, and extra‑territorial application of the Code.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.52
+    },
+    {
+      "id": "lay-c75784dc36",
+      "category": "lay",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [
+        "BNS:349"
+      ],
+      "text": "Assuming the offence was committed in September 2024, the Bharatiya Nyaya Sanhita (BNS) applies. The shopkeeper can be charged under BNS section 349, which deals with selling goods that have a counterfeit property mark. Since the gold chain was presented as genuine but was fake, the shopkeeper’s act of selling it fits this offence and can attract imprisonment up to one year, a fine, or both.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.01
+    },
+    {
+      "id": "lay-e642d5700e",
+      "category": "lay",
+      "status": "clarify",
+      "act": null,
+      "citations": [],
+      "text": "Your question does not say when it happened. Which law applies depends on when the offence was committed: the Indian Penal Code for offences before 1 July 2024, the Bharatiya Nyaya Sanhita from that date on. When was the offence committed? The provisions that look relevant are IPC 304B (Dowry death); BNS 80 (Dowry death).",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-20b"
+      ],
+      "seconds": 0.89
+    },
+    {
+      "id": "lay-4d7db548bc",
+      "category": "lay",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [
+        "BNS:351"
+      ],
+      "text": "Assuming the offence was committed in January 2025, the Bharatiya Nyaya Sanhita (BNS) applies. Your neighbour’s threat to kill you if you complain is covered by BNS section 351, which defines criminal intimidation. Threatening death with the intent to cause alarm or to make you refrain from a legal act (like reporting to police) is punishable with up to two years’ imprisonment, a fine, or both.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.94
+    },
+    {
+      "id": "lay-473dc23334",
+      "category": "lay",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [
+        "BNS:78"
+      ],
+      "text": "Assuming the offence was committed on or after 1 August 2024, the Bharatiya Nyaya Sanhita (BNS) applies. If a man follows you home and repeatedly messages you after you have clearly told him to stop, this conduct falls under Section 78 of the Bharatiya Nyaya Sanhita, which defines stalking. The offence is punishable on first conviction with imprisonment of up to three years and a fine, and on a second or later conviction with imprisonment of up to five years and a fine, unless a legal exemption applies. Since you indicated the conduct is unwanted and there is no stated lawful purpose, the exemption does not apply.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.05
+    },
+    {
+      "id": "lay-9ac90bdb20",
+      "category": "lay",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:405"
+      ],
+      "text": "Assuming the offence was committed in 2023, the Indian Penal Code (IPC) applies. If your employer was entrusted with money you gave him to deposit in a bank and he instead kept and spent it, he has committed criminal breach of trust under IPC section 405. The law says that a person who is entrusted with property and dishonestly misappropriates or uses it for his own benefit commits this offence.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.86
+    },
+    {
+      "id": "lay-884a267e9f",
+      "category": "lay",
+      "status": "declined",
+      "act": "BNS",
+      "citations": [],
+      "text": "The provided sections do not cover a simple assault causing a fracture without a dangerous weapon or other specific circumstances.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.82
+    },
+    {
+      "id": "lay-c44b19aa4b",
+      "category": "lay",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:391"
+      ],
+      "text": "Assuming the offence was committed in March 2024, the Indian Penal Code (IPC) applies. The act described falls under Section 391 of the Indian Penal Code. Because five or more persons jointly committed a robbery, it is classified as dacoity, which is punishable under that section.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.97
+    },
+    {
+      "id": "lay-0498bba98c",
+      "category": "lay",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [
+        "BNS:335"
+      ],
+      "text": "Assuming the offence was committed in October 2024, the Bharatiya Nyaya Sanhita (BNS) applies. Forging your signature on a property document is covered by Section 335 of the Bharatiya Nyaya Sanhita, which makes a false document when a person dishonestly creates or alters a document with the intention that it be believed to be genuine. The offence is punishable with imprisonment and/or fine.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.26
+    },
+    {
+      "id": "lay-c2d42269f0",
+      "category": "lay",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [
+        "BNS:106"
+      ],
+      "text": "Assuming the offence was committed in November 2024, the Bharatiya Nyaya Sanhita (BNS) applies. The driver is liable for the offence under BNS section 106(2) – causing death by rash and negligent driving of a vehicle (not amounting to culpable homicide). This carries imprisonment up to ten years and a fine.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.99
+    },
+    {
+      "id": "lay-c11195b5df",
+      "category": "lay",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:499"
+      ],
+      "text": "Assuming the offence was committed in April 2024, the Indian Penal Code (IPC) applies. Posting false claims online that you are a thief can be punished under Section 499 of the Indian Penal Code, which defines defamation. If the person made the imputation knowing it would harm your reputation, they may be liable for defamation. The offence is punishable under the IPC as it was committed in April 2024.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.11
+    },
+    {
+      "id": "lay-ac9804757a",
+      "category": "lay",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [
+        "BNS:308"
+      ],
+      "text": "Assuming the offence was committed in December 2024, the Bharatiya Nyaya Sanhita (BNS) applies. Your situation falls under BNS section 308, which defines extortion as threatening someone (here, to publish private photos) to obtain money. The threat and demand for payment constitute extortion, punishable by imprisonment and/or fine. The act of taking or sharing the private photos may also be covered by section 77 (voyeurism), but the primary offence you described—demanding payment by threatening to publish the images—is extortion under section 308.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.42
+    },
+    {
+      "id": "lay-62d79562fa",
+      "category": "lay",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:354C"
+      ],
+      "text": "Assuming the offence was committed in February 2024, the Indian Penal Code (IPC) applies. The act of secretly filming a woman while she is changing clothes falls under IPC section 354C – Voyeurism. This section punishes anyone who watches or captures the image of a woman engaged in a private act, such as changing clothes, without her consent.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.89
+    },
+    {
+      "id": "lay-c8ebff55e5",
+      "category": "lay",
+      "status": "clarify",
+      "act": null,
+      "citations": [],
+      "text": "Your question does not say when it happened. Which law applies depends on when the offence was committed: the Indian Penal Code for offences before 1 July 2024, the Bharatiya Nyaya Sanhita from that date on. When was the offence committed? The provisions that look relevant are IPC 438 (Punishment for the mischief described in section 437 committed by fire or explosive substance).",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-20b"
+      ],
+      "seconds": 0.61
+    },
+    {
+      "id": "lay-498e29c7c8",
+      "category": "lay",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:444"
+      ],
+      "text": "Assuming the offence was committed in June 2023, the Indian Penal Code (IPC) applies. Entering your house after sunset and before sunrise without permission is punishable as ‘lurking house‑trespass by night’ under IPC section 444.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.2
+    },
+    {
+      "id": "lay-6d03ef8de9",
+      "category": "lay",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:302"
+      ],
+      "text": "Assuming the offence was committed in 2022, the Indian Penal Code (IPC) applies. The punishment for murder under the Indian Penal Code is death or life imprisonment, and the offender may also be fined.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.89
+    },
+    {
+      "id": "lay-9f79db788c",
+      "category": "lay",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [
+        "BNS:109"
+      ],
+      "text": "Assuming the offence was committed on 5 August 2024, the Bharatiya Nyaya Sanhita (BNS) applies. The act is an attempt to murder. Under BNS section 109, anyone who does an act with the intention to kill and that act would constitute murder if death occurred is guilty of attempt to murder, even if the victim survives. Since the man stabbed the victim intending to kill him, he is liable under section 109.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.94
+    },
+    {
+      "id": "lay-fe479f564f",
+      "category": "lay",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:304B"
+      ],
+      "text": "Assuming the offence was committed in May 2024, the Indian Penal Code (IPC) applies. The death is classified as a dowry death under IPC section 304B. Because the woman died within seven years of marriage (here, within two years) and it is shown that shortly before her death she was subjected to cruelty or harassment by her husband or his relatives for dowry, the husband or relatives are deemed to have caused her death and can be punished with imprisonment of at least seven years, up to life imprisonment.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.83
+    },
+    {
+      "id": "lay-76cabc042a",
+      "category": "lay",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [
+        "BNS:124"
+      ],
+      "text": "Assuming the offence was committed in January 2025, the Bharatiya Nyaya Sanhita (BNS) applies. The act of throwing acid on a woman's face is covered by BNS section 124. It is punishable with imprisonment of at least ten years, up to life, and a fine that must be reasonable to meet her medical expenses and paid to the victim.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.9
+    },
+    {
+      "id": "lay-9828cafc05",
+      "category": "lay",
+      "status": "clarify",
+      "act": null,
+      "citations": [],
+      "text": "Your question does not say when it happened. Which law applies depends on when the offence was committed: the Indian Penal Code for offences before 1 July 2024, the Bharatiya Nyaya Sanhita from that date on. When was the offence committed? The provisions that look relevant are IPC 369 (Kidnapping or abducting child under ten years with intent to steal from its person); BNS 99 (Buying child for purposes of prostitution, etc).",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-20b"
+      ],
+      "seconds": 0.7
+    },
+    {
+      "id": "lay-a1b6cb9852",
+      "category": "lay",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [],
+      "text": "Assuming the offence was committed in 2023, the Indian Penal Code (IPC) applies. Yes. Under section 100 of the IPC, a person may cause death in private defence of the body when the assault reasonably causes the apprehension of death. A knife attack that creates such apprehension falls within the first category listed in section 100, so the man’s act of killing his attacker is protected, subject to the general restrictions of section 99. Section 97 also confirms the right to defend one’s own body against any offence affecting the human body.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 2.17
+    },
+    {
+      "id": "lay-c4c0450048",
+      "category": "lay",
+      "status": "declined",
+      "act": "BNS",
+      "citations": [],
+      "text": "The provided sections do not address the offence of planning or attempting robbery without its execution.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.98
+    },
+    {
+      "id": "lay-c4d5b7c13a",
+      "category": "lay",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [
+        "BNS:108"
+      ],
+      "text": "Assuming the offence was committed in March 2025, the Bharatiya Nyaya Sanhita (BNS) applies. Yes. Under BNS section 108, anyone who abets a person’s suicide is punishable with up to ten years’ imprisonment and a fine. If the teacher’s harassment and humiliation encouraged or assisted the student’s decision to take his own life, that conduct can be treated as abetment of suicide, making the teacher liable under this provision.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.12
+    },
+    {
+      "id": "lay-ec8ce05fba",
+      "category": "lay",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:494",
+        "IPC:495"
+      ],
+      "text": "Assuming the offence was committed in 2021, the Indian Penal Code (IPC) applies. He has committed the offence under IPC section 494, which punishes anyone who marries again while a husband or wife is still alive. The penalty can be up to seven years’ imprisonment and a fine. If he also hid the fact of his first marriage from the second woman, the offence would fall under section 495, which carries a higher maximum sentence of ten years’ imprisonment plus fine.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.87
+    },
+    {
+      "id": "lay-f34e7082fb",
+      "category": "lay",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [
+        "BNS:317"
+      ],
+      "text": "Assuming the offence was committed in July 2024, the Bharatiya Nyaya Sanhita (BNS) applies. If a person bought a motorcycle in July 2024 while knowing (or having reason to believe) that it was stolen, the act falls under BNS section 317(2). That section makes it an offence to dishonestly receive or retain any stolen property, knowing or having reason to believe it is stolen, punishable by imprisonment up to three years, a fine, or both.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.99
+    },
+    {
+      "id": "lay-3baeccb4c3",
+      "category": "lay",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [
+        "BNS:227"
+      ],
+      "text": "Assuming the offence was committed in August 2025, the Bharatiya Nyaya Sanhita (BNS) applies. Lying under oath in court is punishable under BNS section 227, which defines giving false evidence. A person who, while bound by an oath to tell the truth, makes a statement he knows or believes to be false commits the offence and can be sentenced to imprisonment of either description for up to three years and may also be fined.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.88
+    },
+    {
+      "id": "lay-1ccfbd9caf",
+      "category": "lay",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:365"
+      ],
+      "text": "Assuming the offence was committed in June 2024, the Indian Penal Code (IPC) applies. Locking you in a room for two days amounts to kidnapping or abduction with the intent to secretly and wrongfully confine you. Under IPC Section 365, anyone who kidnaps or abducts a person with the intention of secretly and wrongfully confining that person can be punished with imprisonment up to seven years and a fine.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.08
+    },
+    {
+      "id": "lay-33b0eeebcb",
+      "category": "lay",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [
+        "BNS:79"
+      ],
+      "text": "Assuming the offence was committed in November 2025, the Bharatiya Nyaya Sanhita (BNS) applies. The act of making obscene gestures at a woman on the street, intended to insult her modesty, falls under BNS section 79. This section punishes anyone who, intending to insult a woman's modesty, makes gestures or exhibits objects so that the woman sees them, with imprisonment up to three years and a fine.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.79
+    },
+    {
+      "id": "boundary-4932799a4e",
+      "category": "boundary",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:415"
+      ],
+      "text": "Assuming the offence was committed on 30 June 2024, the Indian Penal Code (IPC) applies. The offence of cheating a buyer is covered by Section 415 of the Indian Penal Code, which defines cheating as deceiving a person and dishonestly inducing them to deliver property or to act in a way that causes loss. (Source 3)",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.32
+    },
+    {
+      "id": "boundary-8e4a944e33",
+      "category": "boundary",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [
+        "BNS:318"
+      ],
+      "text": "Assuming the offence was committed on 1 July 2024, the Bharatiya Nyaya Sanhita (BNS) applies. The offence is covered by BNS section 318 – Cheating. It applies to anyone who, by deception, dishonestly induces another to deliver property or to act in a way that causes damage, which includes cheating a buyer.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.86
+    },
+    {
+      "id": "boundary-49509f9ccb",
+      "category": "boundary",
+      "status": "declined",
+      "act": "IPC",
+      "citations": [],
+      "text": "The provided sections cover fraudulent removal or claim of property (206, 207) and theft with preparation for violence or vehicle/cattle lifting (382, 382C‑F). They do not address ordinary theft or the effect of filing an FIR later. Hence none of the listed sections apply to the described theft.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.23
+    },
+    {
+      "id": "boundary-08655ebcde",
+      "category": "boundary",
+      "status": "declined",
+      "act": "BNS",
+      "citations": [],
+      "text": "The provided sections cover assault with grave provocation (136) and assaults specifically targeting women (74, 76). None of them address a simple slap without provocation or gender‑specific intent, so the sources do not specify a section for this case.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.97
+    },
+    {
+      "id": "boundary-38dd8ae412",
+      "category": "boundary",
+      "status": "clarify",
+      "act": null,
+      "citations": [],
+      "text": "The period you gave covers both sides of 1 July 2024. Which law applies depends on when the offence was committed: the Indian Penal Code for offences before 1 July 2024, the Bharatiya Nyaya Sanhita from that date on. When was the offence committed? The provisions that look relevant are IPC 4 (Extension of Code to extra-territorial offences); BNS 1 (Short title, commencement and application).",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-20b"
+      ],
+      "seconds": 0.64
+    },
+    {
+      "id": "boundary-ed03ee674e",
+      "category": "boundary",
+      "status": "clarify",
+      "act": null,
+      "citations": [],
+      "text": "The period you gave covers both sides of 1 July 2024. Which law applies depends on when the offence was committed: the Indian Penal Code for offences before 1 July 2024, the Bharatiya Nyaya Sanhita from that date on. When was the offence committed? The provisions that look relevant are IPC 489B (Using as genuine, forged or counterfeit currency-notes or bank-notes).",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.8
+    },
+    {
+      "id": "tricky-4d73b20232",
+      "category": "tricky",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [
+        "BNS:152"
+      ],
+      "text": "Assuming the offence was committed in September 2024, the Bharatiya Nyaya Sanhita (BNS) applies. No, merely giving a speech criticizing the government is not an offence under the BNS, provided the speech does not purposefully excite secession, armed rebellion, or subversive activities. Section 152 expressly excludes comments expressing disapproval of government actions aimed at lawful change, as long as they do not incite the prohibited activities.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.97
+    },
+    {
+      "id": "tricky-a7c4401265",
+      "category": "tricky",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:124A"
+      ],
+      "text": "You asked about the Indian Penal Code (IPC). Section 124A defines sedition. It says anyone who, by words (spoken or written), signs, visible representation or otherwise, brings or attempts to bring hatred or contempt, or excites or attempts to excite disaffection toward the Government established by law in India shall be punished with life imprisonment (or up to three years) and may also be fined. The section includes explanations: ‘disaffection’ means disloyalty or enmity; criticism of government measures aimed at lawful change without inciting hatred or contempt is not an offence; likewise, criticism of administrative actions without inciting hatred or contempt is not an offence.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.17
+    },
+    {
+      "id": "tricky-0979fb51c5",
+      "category": "tricky",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:309"
+      ],
+      "text": "Assuming the offence was committed in 2020, the Indian Penal Code (IPC) applies. Yes. Under Section 309 of the Indian Penal Code, a person who attempts to commit suicide can be punished with simple imprisonment for up to one year, or with a fine, or both.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.71
+    },
+    {
+      "id": "tricky-221f027687",
+      "category": "tricky",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [
+        "BNS:304",
+        "BNS:303"
+      ],
+      "text": "Assuming the offence was committed on 20 October 2024, the Bharatiya Nyaya Sanhita (BNS) applies. The act of pulling a gold chain from a woman’s neck while on a bike is theft. Because the chain was taken suddenly and forcibly, it is classified as snatching under section 304, which is a form of theft under section 303. The offender can be punished with imprisonment for up to three years and may also be fined.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.98
+    },
+    {
+      "id": "tricky-9bb663c676",
+      "category": "tricky",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:354B"
+      ],
+      "text": "Assuming the offence was committed in 2023, the Indian Penal Code (IPC) applies. The act of pulling a gold chain from a woman’s neck is covered by IPC section 354B, which punishes any man who assaults a woman with the intention of disrobing her or forcing her to be naked. The offence carries imprisonment of at least three years, up to seven years, and a fine.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.97
+    },
+    {
+      "id": "tricky-246171546d",
+      "category": "tricky",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [
+        "BNS:111"
+      ],
+      "text": "Assuming the offence was committed on or after 1 January 2025, the Bharatiya Nyaya Sanhita (BNS) applies. The gang’s activities of extortion and contract killings that are carried out by a group across states fall under the definition of organised crime in BNS section 111. Such continuing unlawful activity by a syndicate is classified as organised crime.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.95
+    },
+    {
+      "id": "tricky-64cc6b21ff",
+      "category": "tricky",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [
+        "BNS:202"
+      ],
+      "text": "You asked about the Bharatiya Nyaya Sanhita (BNS). Yes. Section 202 of the Bharatiya Nyaya Sanhita provides that a public servant who unlawfully engages in trade may be punished with simple imprisonment, a fine, or community service.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.14
+    },
+    {
+      "id": "tricky-d2c6c41e5d",
+      "category": "tricky",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [],
+      "text": "Assuming the offence was committed in 2025, the Bharatiya Nyaya Sanhita (BNS) applies. The killing is murder under section 101. Because it was done by a mob of five or more people on the ground of caste, the special provision of section 103(2) also applies, prescribing death or life imprisonment and a fine.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.99
+    },
+    {
+      "id": "hindi-4d1269bb19",
+      "category": "hindi",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:418"
+      ],
+      "text": "Assuming the offence was committed in March 2024, the Indian Penal Code (IPC) applies. धोखाधड़ी (धोखा) करने वाले को अधिकतम तीन साल तक की जेल, जुर्माना या दोनों की सजा हो सकती है।",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.92
+    },
+    {
+      "id": "hindi-bde6ef5692",
+      "category": "hindi",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [
+        "BNS:304"
+      ],
+      "text": "Assuming the offence was committed in August 2024, the Bharatiya Nyaya Sanhita (BNS) applies. आपके मोबाइल की चोरी को ‘स्नैचिंग’ माना जा सकता है, क्योंकि मोबाइल एक चल संपत्ति है और यदि वह अचानक या तेज़ी से ले ली गई हो तो यह धारा 304 के तहत आएगी।",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.15
+    },
+    {
+      "id": "hindi-b6a80efcae",
+      "category": "hindi",
+      "status": "clarify",
+      "act": null,
+      "citations": [],
+      "text": "Your question does not say when it happened. Which law applies depends on when the offence was committed: the Indian Penal Code for offences before 1 July 2024, the Bharatiya Nyaya Sanhita from that date on. When was the offence committed? The provisions that look relevant are IPC 498A (Husband or relative of husband of a woman subjecting her to cruelty); BNS 80 (Dowry death).",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-20b"
+      ],
+      "seconds": 0.79
+    },
+    {
+      "id": "hindi-5c4e4af4ed",
+      "category": "hindi",
+      "status": "clarify",
+      "act": null,
+      "citations": [],
+      "text": "Your question does not say when it happened. Which law applies depends on when the offence was committed: the Indian Penal Code for offences before 1 July 2024, the Bharatiya Nyaya Sanhita from that date on. When was the offence committed? The provisions that look relevant are IPC 302 (Punishment for murder); BNS 103 (Punishment for murder).",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.74
+    },
+    {
+      "id": "hindi-95147d7f47",
+      "category": "hindi",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [
+        "BNS:351"
+      ],
+      "text": "Assuming the offence was committed in January 2025, the Bharatiya Nyaya Sanhita (BNS) applies. यदि किसी ने आपको जान से मारने की धमकी दी, तो यह धारा 351 के तहत आपराधिक डरावनी (क्रिमिनल इंटिमिडेशन) माना जाता है। इस धारा के अनुसार, किसी को उसकी शारीरिक, प्रतिष्ठा या संपत्ति को नुकसान पहुँचाने की धमकी देना, जिससे वह डर महसूस करे या वह कोई ऐसा कार्य करे या न करे जो वह कानूनी रूप से करने या न करने के लिए बाध्य नहीं है, आपराधिक डरावनी है। इस अपराध की सजा दो वर्ष तक की जेल, जुर्माना या दोनों हो सकती है।",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.02
+    },
+    {
+      "id": "hindi-0fc9f67f68",
+      "category": "hindi",
+      "status": "declined",
+      "act": "IPC",
+      "citations": [],
+      "text": "The provided sources do not include a section on defamation (मानहानि).",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.95
+    },
+    {
+      "id": "hindi-8b7b063486",
+      "category": "hindi",
+      "status": "declined",
+      "act": "IPC",
+      "citations": [],
+      "text": "The provided sections discuss rape, snatching, and conspiracy, but do not cover the punishment for theft (chori).",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.83
+    },
+    {
+      "id": "hindi-0616e5d406",
+      "category": "hindi",
+      "status": "declined",
+      "act": "BNS",
+      "citations": [],
+      "text": "The provided sections cover drug misrepresentation, failure to appear after a proclamation, and hospital non‑treatment of victims. They do not address personal violence or homicide, so no applicable section can be identified from these sources.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.76
+    },
+    {
+      "id": "hindi-27d769a4e9",
+      "category": "hindi",
+      "status": "clarify",
+      "act": null,
+      "citations": [],
+      "text": "Your question does not say when it happened. Which law applies depends on when the offence was committed: the Indian Penal Code for offences before 1 July 2024, the Bharatiya Nyaya Sanhita from that date on. When was the offence committed? The provisions that look relevant are IPC 326B (Voluntarily throwing or attempting to throw acid); BNS 302 (Uttering words, etc., with deliberate intent to wound religious feelings of any person).",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-20b"
+      ],
+      "seconds": 0.63
+    },
+    {
+      "id": "hindi-23d7e3e13f",
+      "category": "hindi",
+      "status": "declined",
+      "act": "BNS",
+      "citations": [],
+      "text": "The provided sections do not define or prescribe punishment for fraud (dhokhadhadi).",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.02
+    },
+    {
+      "id": "out_of_scope-240a1f7105",
+      "category": "out_of_scope",
+      "status": "declined",
+      "act": null,
+      "citations": [],
+      "text": "This is outside the Indian Penal Code and the Bharatiya Nyaya Sanhita, which are the only laws I cover.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.75
+    },
+    {
+      "id": "out_of_scope-384684638f",
+      "category": "out_of_scope",
+      "status": "declined",
+      "act": null,
+      "citations": [],
+      "text": "This is outside the Indian Penal Code and the Bharatiya Nyaya Sanhita, which are the only laws I cover.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.57
+    },
+    {
+      "id": "out_of_scope-338c667dcd",
+      "category": "out_of_scope",
+      "status": "declined",
+      "act": null,
+      "citations": [],
+      "text": "This is outside the Indian Penal Code and the Bharatiya Nyaya Sanhita, which are the only laws I cover.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.69
+    },
+    {
+      "id": "out_of_scope-68c0a0dd92",
+      "category": "out_of_scope",
+      "status": "declined",
+      "act": null,
+      "citations": [],
+      "text": "This is outside the Indian Penal Code and the Bharatiya Nyaya Sanhita, which are the only laws I cover.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.15
+    },
+    {
+      "id": "out_of_scope-f267ac6245",
+      "category": "out_of_scope",
+      "status": "declined",
+      "act": null,
+      "citations": [],
+      "text": "This is outside the Indian Penal Code and the Bharatiya Nyaya Sanhita, which are the only laws I cover.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.67
+    },
+    {
+      "id": "out_of_scope-2134d8282c",
+      "category": "out_of_scope",
+      "status": "declined",
+      "act": null,
+      "citations": [],
+      "text": "This is outside the Indian Penal Code and the Bharatiya Nyaya Sanhita, which are the only laws I cover.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.84
+    },
+    {
+      "id": "out_of_scope-bad9ea434b",
+      "category": "out_of_scope",
+      "status": "declined",
+      "act": null,
+      "citations": [],
+      "text": "This is outside the Indian Penal Code and the Bharatiya Nyaya Sanhita, which are the only laws I cover.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.76
+    },
+    {
+      "id": "out_of_scope-bb015cc4c9",
+      "category": "out_of_scope",
+      "status": "declined",
+      "act": null,
+      "citations": [],
+      "text": "This is outside the Indian Penal Code and the Bharatiya Nyaya Sanhita, which are the only laws I cover.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.76
+    },
+    {
+      "id": "map_ipc_to_bns-e57c938ed1",
+      "category": "map_ipc_to_bns",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [
+        "BNS:1"
+      ],
+      "text": "You asked what IPC 1 corresponds to in the Bharatiya Nyaya Sanhita (BNS). The equivalent of IPC section 1 in the Bharatiya Nyaya Sanhita is BNS section 1(1).",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.88
+    },
+    {
+      "id": "map_ipc_to_bns-0f9563504b",
+      "category": "map_ipc_to_bns",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [
+        "BNS:13"
+      ],
+      "text": "You asked what IPC 75 corresponds to in the Bharatiya Nyaya Sanhita (BNS). According to the official IPC‑BNS correspondence, IPC section 75 is now BNS section 13.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.67
+    },
+    {
+      "id": "map_ipc_to_bns-de0c3fb7f3",
+      "category": "map_ipc_to_bns",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [
+        "BNS:165"
+      ],
+      "text": "You asked what IPC 137 corresponds to in the Bharatiya Nyaya Sanhita (BNS). The offence that was IPC section 137 is now covered by BNS section 165.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.03
+    },
+    {
+      "id": "map_ipc_to_bns-07f6b7cf33",
+      "category": "map_ipc_to_bns",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [
+        "BNS:231"
+      ],
+      "text": "You asked what IPC 195 corresponds to in the Bharatiya Nyaya Sanhita (BNS). The IPC section 195 is now BNS section 231 – giving or fabricating false evidence with intent to procure conviction of an offence punishable with life imprisonment or imprisonment for seven years or more.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.81
+    },
+    {
+      "id": "map_ipc_to_bns-0dcc96ba4a",
+      "category": "map_ipc_to_bns",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [
+        "BNS:181"
+      ],
+      "text": "You asked what IPC 257 corresponds to in the Bharatiya Nyaya Sanhita (BNS). The IPC section 257 is now BNS section 181.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.07
+    },
+    {
+      "id": "map_ipc_to_bns-330175468b",
+      "category": "map_ipc_to_bns",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [
+        "BNS:117"
+      ],
+      "text": "You asked what IPC 325 corresponds to in the Bharatiya Nyaya Sanhita (BNS). The offence under IPC section 325 is now covered by BNS section 117(2).",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.02
+    },
+    {
+      "id": "map_ipc_to_bns-40fb36fa2c",
+      "category": "map_ipc_to_bns",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [
+        "BNS:68"
+      ],
+      "text": "You asked what IPC 376C corresponds to in the Bharatiya Nyaya Sanhita (BNS). The offence that was IPC 376C is now covered by BNS section 68.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.04
+    },
+    {
+      "id": "map_ipc_to_bns-af52380220",
+      "category": "map_ipc_to_bns",
+      "status": "answered",
+      "act": "BNS",
+      "citations": [
+        "BNS:1"
+      ],
+      "text": "You asked what IPC 440 corresponds to in the Bharatiya Nyaya Sanhita (BNS). The equivalent provision in the Bharatiya Nyaya Sanhita is section 324(6).",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.78
+    },
+    {
+      "id": "map_bns_to_ipc-3699bf9fa4",
+      "category": "map_bns_to_ipc",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:1"
+      ],
+      "text": "You asked what BNS 1 corresponds to in the Indian Penal Code (IPC). BNS section 1 (specifically BNS 1(1)) replaced IPC section 1, the provision titled “Title and extent of operation of the Code.”",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.23
+    },
+    {
+      "id": "map_bns_to_ipc-8ec7f1abe9",
+      "category": "map_bns_to_ipc",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:106",
+        "IPC:441"
+      ],
+      "text": "You asked what BNS 44 corresponds to in the Indian Penal Code (IPC). BNS 44 was the old IPC section 106 – the provision on the right of private defence against a deadly assault when exercising that defence may risk harm to an innocent person.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.08
+    },
+    {
+      "id": "map_bns_to_ipc-63a5f026de",
+      "category": "map_bns_to_ipc",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:1"
+      ],
+      "text": "You asked what BNS 89 corresponds to in the Indian Penal Code (IPC). BNS 89 corresponds to IPC section 313, which deals with causing miscarriage without the woman's consent.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.71
+    },
+    {
+      "id": "map_bns_to_ipc-f5d0c77c60",
+      "category": "map_bns_to_ipc",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:358"
+      ],
+      "text": "You asked what BNS 136 corresponds to in the Indian Penal Code (IPC). BNS section 136 replaced IPC section 358.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.1
+    },
+    {
+      "id": "map_bns_to_ipc-59c2d91b5e",
+      "category": "map_bns_to_ipc",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:242",
+        "IPC:243",
+        "IPC:252",
+        "IPC:253"
+      ],
+      "text": "You asked what BNS 180 corresponds to in the Indian Penal Code (IPC). BNS 180 was the new code number that replaced several old IPC sections dealing with possession of counterfeit or altered coins. Under the old IPC it covered sections 242 (possession of counterfeit coin), 243 (possession of counterfeit Indian coin), 252 (possession of a coin known to be altered) and 253 (possession of an Indian coin known to be altered).",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.12
+    },
+    {
+      "id": "map_bns_to_ipc-007b676420",
+      "category": "map_bns_to_ipc",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:188"
+      ],
+      "text": "You asked what BNS 223 corresponds to in the Indian Penal Code (IPC). BNS 223 corresponds to IPC section 188.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.1
+    },
+    {
+      "id": "map_bns_to_ipc-0dbc6908e8",
+      "category": "map_bns_to_ipc",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:228"
+      ],
+      "text": "You asked what BNS 267 corresponds to in the Indian Penal Code (IPC). BNS section 267 replaced IPC section 228, which deals with intentional insult or interruption to a public servant sitting in a judicial proceeding.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.94
+    },
+    {
+      "id": "map_bns_to_ipc-9572bc5913",
+      "category": "map_bns_to_ipc",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:397"
+      ],
+      "text": "You asked what BNS 311 corresponds to in the Indian Penal Code (IPC). BNS 311 was the offence of robbery or dacoity with an attempt to cause death or grievous hurt – the same conduct described in IPC section 397.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.94
+    },
+    {
+      "id": "topic_dated-222fc8e624",
+      "category": "topic_dated",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:1"
+      ],
+      "text": "Assuming the offence was committed on 4 November 2019, the Indian Penal Code (IPC) applies. The Indian Penal Code is called the ‘Indian Penal Code’ and it extends to the whole of India. This means its provisions apply throughout the entire country.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.95
+    },
+    {
+      "id": "topic_dated-3acab6e2c7",
+      "category": "topic_dated",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:75"
+      ],
+      "text": "Assuming the offence was committed on 21 August 2023, the Indian Penal Code (IPC) applies. Section 75 of the Indian Penal Code provides for enhanced punishment for certain offences under Chapter XII or Chapter XVII when the offender has a previous conviction.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.91
+    },
+    {
+      "id": "topic_dated-43ac0938aa",
+      "category": "topic_dated",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:139"
+      ],
+      "text": "Assuming the offence was committed on 4 November 2019, the Indian Penal Code (IPC) applies. The provision that applies is Section 139 of the Indian Penal Code, which states that persons subject to the Army Act, Naval Discipline Act, or Air Force Act are not punishable under the IPC for offences defined in this Chapter. Since the incident occurred on 4 November 2019, Section 139 is the relevant provision.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 1.1
+    },
+    {
+      "id": "topic_dated-933fa21455",
+      "category": "topic_dated",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:196"
+      ],
+      "text": "Assuming the offence was committed on 21 August 2023, the Indian Penal Code (IPC) applies. Section 196 of the Indian Penal Code makes it an offence to corruptly use or attempt to use any evidence that the person knows is false or fabricated, as if it were true. The punishment is the same as for giving or fabricating false evidence.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.83
+    },
+    {
+      "id": "topic_dated-85c169b7a7",
+      "category": "topic_dated",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:259"
+      ],
+      "text": "Assuming the offence was committed on 4 November 2019, the Indian Penal Code (IPC) applies. Section 259 of the Indian Penal Code deals with having possession of a counterfeit Government stamp.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.72
+    },
+    {
+      "id": "topic_dated-29bc044218",
+      "category": "topic_dated",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:326A"
+      ],
+      "text": "Assuming the offence was committed on 21 August 2023, the Indian Penal Code (IPC) applies. The offence of voluntarily causing grievous hurt by use of acid is covered by IPC section 326A, which applies to acts of throwing or administering acid that cause permanent or partial damage, burns, maiming, disfigurement or grievous hurt.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.93
+    },
+    {
+      "id": "topic_dated-ec4f2cf4c4",
+      "category": "topic_dated",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:376DB"
+      ],
+      "text": "Assuming the offence was committed on 4 November 2019, the Indian Penal Code (IPC) applies. The law provides that if a woman under twelve years of age is gang‑raped, each participant is deemed to have committed rape and is punishable with imprisonment for life (the remainder of his natural life) and a fine. The fine must be just and reasonable to cover the victim’s medical expenses and rehabilitation, and any fine must be paid to the victim.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.95
+    },
+    {
+      "id": "topic_dated-3f61414905",
+      "category": "topic_dated",
+      "status": "answered",
+      "act": "IPC",
+      "citations": [
+        "IPC:442"
+      ],
+      "text": "Assuming the offence was committed on 21 August 2023, the Indian Penal Code (IPC) applies. Section 442 of the Indian Penal Code defines house‑trespass and therefore deals with house‑trespass for an offence committed on 21 August 2023.",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.87
+    },
+    {
+      "id": "topic_undated-9293c1c721",
+      "category": "topic_undated",
+      "status": "clarify",
+      "act": null,
+      "citations": [],
+      "text": "Your question does not say when it happened. Which law applies depends on when the offence was committed: the Indian Penal Code for offences before 1 July 2024, the Bharatiya Nyaya Sanhita from that date on. When was the offence committed? The provisions that look relevant are IPC 3 (Punishment of offences committed beyond, but which by law may be tried within, India); BNS 1 (Short title, commencement and application).",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-20b"
+      ],
+      "seconds": 1.22
+    },
+    {
+      "id": "topic_undated-b50d8002fd",
+      "category": "topic_undated",
+      "status": "clarify",
+      "act": null,
+      "citations": [],
+      "text": "Your question does not say when it happened. Which law applies depends on when the offence was committed: the Indian Penal Code for offences before 1 July 2024, the Bharatiya Nyaya Sanhita from that date on. When was the offence committed? The provisions that look relevant are IPC 77 (Act of Judge when acting judicially); BNS 15 (Act of Judge when acting judicially).",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.73
+    },
+    {
+      "id": "topic_undated-d26b52a41c",
+      "category": "topic_undated",
+      "status": "clarify",
+      "act": null,
+      "citations": [],
+      "text": "Your question does not say when it happened. Which law applies depends on when the offence was committed: the Indian Penal Code for offences before 1 July 2024, the Bharatiya Nyaya Sanhita from that date on. When was the offence committed? The provisions that look relevant are IPC 141 (Unlawful assembly); BNS 189 (Unlawful assembly).",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.67
+    },
+    {
+      "id": "topic_undated-0179709661",
+      "category": "topic_undated",
+      "status": "clarify",
+      "act": null,
+      "citations": [],
+      "text": "Your question does not say when it happened. Which law applies depends on when the offence was committed: the Indian Penal Code for offences before 1 July 2024, the Bharatiya Nyaya Sanhita from that date on. When was the offence committed? The provisions that look relevant are IPC 198 (Using as true a certificate known to be false); BNS 235 (Using as true a certificate known to be false).",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-20b"
+      ],
+      "seconds": 0.48
+    },
+    {
+      "id": "topic_undated-b3dec99ed0",
+      "category": "topic_undated",
+      "status": "clarify",
+      "act": null,
+      "citations": [],
+      "text": "Your question does not say when it happened. Which law applies depends on when the offence was committed: the Indian Penal Code for offences before 1 July 2024, the Bharatiya Nyaya Sanhita from that date on. When was the offence committed? The provisions that look relevant are IPC 261 (Effacing writing from substance bearing Government stamp, or removing from document a stamp used for it, with intent to cause loss to Government); BNS 183 (Effacing writing from substance bearing Government stamp, or removing from document a stamp used for it, with intent to cause loss to Government).",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.73
+    },
+    {
+      "id": "topic_undated-bbe6f9a770",
+      "category": "topic_undated",
+      "status": "clarify",
+      "act": null,
+      "citations": [],
+      "text": "Your question does not say when it happened. Which law applies depends on when the offence was committed: the Indian Penal Code for offences before 1 July 2024, the Bharatiya Nyaya Sanhita from that date on. When was the offence committed? The provisions that look relevant are IPC 327 (Voluntarily causing hurt to extort property, or to constrain to an illegal to an act); BNS 120 (Voluntarily causing hurt or grievous hurt to extort confession, or to compel restoration of property).",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.74
+    },
+    {
+      "id": "topic_undated-33d1d65818",
+      "category": "topic_undated",
+      "status": "clarify",
+      "act": null,
+      "citations": [],
+      "text": "Your question does not say when it happened. Which law applies depends on when the offence was committed: the Indian Penal Code for offences before 1 July 2024, the Bharatiya Nyaya Sanhita from that date on. When was the offence committed? The provisions that look relevant are IPC 378 (Theft); BNS 303 (Theft).",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.55
+    },
+    {
+      "id": "topic_undated-238dadefbc",
+      "category": "topic_undated",
+      "status": "clarify",
+      "act": null,
+      "citations": [],
+      "text": "Your question does not say when it happened. Which law applies depends on when the offence was committed: the Indian Penal Code for offences before 1 July 2024, the Bharatiya Nyaya Sanhita from that date on. When was the offence committed? The provisions that look relevant are IPC 445 (House-breaking); BNS 330 (House-trespass and house-breaking).",
+      "first_draft_unsupported": [],
+      "final_unsupported": [],
+      "calls": 1,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "seconds": 0.68
+    }
+  ]
+}

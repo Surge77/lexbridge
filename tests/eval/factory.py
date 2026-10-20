@@ -27,6 +27,7 @@ EDGES = [
     Edge("IPC:378", "BNS:303", Relation.REPLACED_BY, "(1)"),
     Edge("IPC:379", "BNS:303", Relation.REPLACED_BY, "(2)"),
     Edge("IPC:420", "BNS:318", Relation.REPLACED_BY, "(4)"),
+    Edge("IPC:379", "IPC:378", Relation.REFERS_TO, ""),
     # Not the real mapping: gives a shared heading ("Punishment") a successor, so only the
     # duplicate-title filter keeps it out of the topical questions.
     Edge("IPC:147", "BNS:318", Relation.REPLACED_BY, ""),
