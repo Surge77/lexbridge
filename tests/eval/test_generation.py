@@ -39,7 +39,8 @@ def outcome(status: str, *, act: str | None = "BNS", citations: tuple[str, ...] 
             seconds: float = 1.0) -> Outcome:
     return {"id": "x", "category": "lay", "status": status, "act": act,
             "citations": list(citations), "text": "t", "first_draft_unsupported": list(first),
-            "final_unsupported": list(final), "calls": 1, "seconds": seconds}
+            "final_unsupported": list(final), "calls": 1, "models": ["m"],
+            "seconds": seconds}
 
 
 def test_the_subset_keeps_every_hand_case_and_samples_each_generated_category() -> None:

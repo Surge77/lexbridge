@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import json
 import time
-from collections import defaultdict
+from collections import Counter, defaultdict
 from collections.abc import Callable, Sequence
 from pathlib import Path
 from statistics import fmean, quantiles
@@ -36,6 +36,7 @@ class Outcome(TypedDict):
     first_draft_unsupported: list[str]
     final_unsupported: list[str]
     calls: int
+    models: list[str]  # the model behind each call, in order
     seconds: float
 
 
@@ -149,7 +150,7 @@ def append_checkpoint(path: Path, outcome: Outcome) -> None:
 def main() -> None:  # pragma: no cover - calls a real model over the network
     import argparse
 
-    from lexbridge.answer.llm import PROVIDERS, Gateway, LLMUnavailableError
+    from lexbridge.answer.llm import CHAIN, Gateway, LLMUnavailableError
     from lexbridge.answer.service import answer
     from lexbridge.answer.verify import unsupported
     from lexbridge.bundle import load_bundle
@@ -173,7 +174,7 @@ def main() -> None:  # pragma: no cover - calls a real model over the network
     scorer = CrossEncoderScorer(spec.reranker) if spec.reranker else None
     retriever = Pipeline(bundle, dense, scorer=scorer, rerank_depth=spec.rerank_depth,
                          routed=spec.route, references=spec.references)
-    chat = Gateway([PROVIDERS["groq"], PROVIDERS["gemini"]])
+    chat = Gateway(CHAIN)
     cases = subset(read_cases(GOLDEN))
 
     def run(case: Case) -> Outcome:
@@ -184,7 +185,8 @@ def main() -> None:  # pragma: no cover - calls a real model over the network
                 "first_draft_unsupported": list(a.first_draft_unsupported),
                 # Checked here again, independently of the service's own filtering.
                 "final_unsupported": unsupported(a.text, a.allowed),
-                "calls": len(a.calls), "seconds": round(time.perf_counter() - start, 2)}
+                "calls": len(a.calls), "models": [c.model for c in a.calls],
+                "seconds": round(time.perf_counter() - start, 2)}
 
     name = args.name or f"gen-{args.pipeline}"
     out = Path("reports/generation") / f"{name}.json"
@@ -201,7 +203,9 @@ def main() -> None:  # pragma: no cover - calls a real model over the network
         print(f"{i}/{len(cases)} {case.id} -> {outcomes[-1]['status']}", flush=True)
 
     record = {"name": name, "pipeline": args.pipeline, "providers": chat.providers,
-              "model": PROVIDERS["groq"].model, "scores": score(cases, outcomes),
+              # Which models wrote the answers: a provider that ran out mid-run hands over.
+              "models": dict(Counter(m for o in outcomes for m in o["models"])),
+              "scores": score(cases, outcomes),
               "by_category": by_category(cases, outcomes), "outcomes": outcomes}
     out.write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\n",
                    encoding="utf-8", newline="\n")

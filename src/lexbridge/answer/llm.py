@@ -39,9 +39,16 @@ PROVIDERS = {
     # yes/no scope check need little of it.
     "groq": Provider("groq", "https://api.groq.com/openai/v1", "openai/gpt-oss-20b",
                      "GROQ_API_KEY", {"reasoning_effort": "low"}),
+    # Groq's free tier caps tokens per day per model (200k), so a second model behind the
+    # same key is a second day's budget: when the first is spent it answers 429, and the
+    # gateway moves on.
+    "groq-large": Provider("groq-large", "https://api.groq.com/openai/v1",
+                           "openai/gpt-oss-120b", "GROQ_API_KEY", {"reasoning_effort": "low"}),
     "gemini": Provider("gemini", "https://generativelanguage.googleapis.com/v1beta/openai",
                        "gemini-2.5-flash", "GEMINI_API_KEY"),
 }
+# The order the app and the evaluation try them in.
+CHAIN = (PROVIDERS["groq"], PROVIDERS["groq-large"], PROVIDERS["gemini"])
 
 
 @dataclass(frozen=True)
