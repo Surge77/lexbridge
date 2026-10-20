@@ -16,7 +16,8 @@ _NUMBER = r"\d{1,3}[A-Z]{0,3}(?!\d)(?:\(\w{1,4}\))*"
 # "section 318", "sections 303 and 304", "s. 498A", "§ 420". Not "sub-section (4)".
 _BARE = re.compile(rf"(?<![\w-])(?:sections?|secs?\.?|ss?\.|§)\s*({_NUMBER}"
                    rf"(?:\s*(?:,|and|or|&|to)\s*{_NUMBER})*)", re.IGNORECASE)
-_EACH = re.compile(r"(\d{1,3}[A-Z]{0,3})(?!\d)", re.IGNORECASE)
+# A number right after "(" is a sub-section: the 2 of "117(2)" is not section 2.
+_EACH = re.compile(r"(?<![(\w])(\d{1,3}[A-Z]{0,3})(?!\d)", re.IGNORECASE)
 _SENTENCE = re.compile(r"(?<=[.!?])\s+")
 
 

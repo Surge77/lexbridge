@@ -14,6 +14,8 @@ SOURCES = {"BNS:318", "BNS:319", "IPC:420"}
     ("under s. 498A and §420", set(), {"498A", "420"}),
     # A sub-section is not a section number.
     ("Its sub-section (4) applies.", set(), set()),
+    ("The equivalent is BNS section 117(2).", {"BNS:117"}, {"117"}),
+    ("See sections 318(4) and 319(2)(a).", set(), {"318", "319"}),
     ("Imprisonment up to 7 years and a fine.", set(), set()),
 ])
 def test_mentions_are_read_with_and_without_their_code(
