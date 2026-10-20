@@ -117,8 +117,8 @@ class Pipeline:
                 resolved.extend(self._bundle.replaces(section))
         return list(dict.fromkeys(resolved))
 
-    def _finish(self, query: str, hits: list[Hit], k: int) -> list[Hit]:
-        facts = understand(query)
+    def _finish(self, query: str, hits: list[Hit], k: int, facts: Facts | None) -> list[Hit]:
+        facts = facts or understand(query)
         act = route(facts, maps=self._references).act if self._routed else None
         if act:
             hits = [h for h in hits if h.section_id.startswith(f"{act}:")]
@@ -132,8 +132,11 @@ class Pipeline:
         return (cited + [h for h in hits if h.section_id not in seen])[:k]
 
     def search_many(self, queries: Sequence[str], k: int) -> list[list[Hit]]:
-        return [self._finish(q, hits, k)
+        return [self._finish(q, hits, k, None)
                 for q, hits in zip(queries, self._first_stage(queries), strict=True)]
 
-    def search(self, query: str, k: int) -> list[Hit]:
-        return self.search_many([query], k)[0]
+    def search(self, query: str, k: int, *, facts: Facts | None = None) -> list[Hit]:
+        """facts: what the caller already understood of the query, so retrieval routes the
+        same way the answer does, including an offence date the user gave explicitly."""
+        [hits] = self._first_stage([query])
+        return self._finish(query, hits, k, facts)
