@@ -17,6 +17,12 @@ SOURCES = {"BNS:318", "BNS:319", "IPC:420"}
     ("The equivalent is BNS section 117(2).", {"BNS:117"}, {"117"}),
     ("See sections 318(4) and 319(2)(a).", set(), {"318", "319"}),
     ("Imprisonment up to 7 years and a fine.", set(), set()),
+    # A quantity after a section is not another section in a list.
+    ("Under section 318, 7 years' jail.", set(), {"318"}),
+    ("Section 318 or 3 years", set(), {"318"}),
+    # Hindi answers: the word for section, and Devanagari digits.
+    ("धारा 999 लागू है।", set(), {"999"}),
+    ("धारा ४२० लागू", set(), {"420"}),
 ])
 def test_mentions_are_read_with_and_without_their_code(
         text: str, coded: set[str], bare: set[str]) -> None:
@@ -43,3 +49,13 @@ def test_stripping_removes_only_the_sentences_with_unsupported_mentions() -> Non
 
     assert kept == "BNS 318 punishes cheating. The fine is unlimited."
     assert removed == ["999"]
+
+
+@pytest.mark.parametrize("text", [
+    # "s." and "Sec." end in a full stop but do not end the sentence.
+    "Sec. 999 applies. BNS 318 punishes cheating.",
+    "It falls under s. 999 of it. BNS 318 punishes cheating.",
+    "धारा 999 लागू है। BNS 318 punishes cheating.",
+])
+def test_an_abbreviation_does_not_split_a_mention_from_its_sentence(text: str) -> None:
+    assert strip_unsupported(text, SOURCES) == ("BNS 318 punishes cheating.", ["999"])

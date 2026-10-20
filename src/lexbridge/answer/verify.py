@@ -10,19 +10,26 @@ from __future__ import annotations
 import re
 from collections.abc import Collection
 
-from lexbridge.query.citations import references
+from lexbridge.query.citations import NOT_A_QUANTITY, references
+from lexbridge.query.dates import DIGITS
 
-_NUMBER = r"\d{1,3}[A-Z]{0,3}(?!\d)(?:\(\w{1,4}\))*"
-# "section 318", "sections 303 and 304", "s. 498A", "§ 420". Not "sub-section (4)".
-_BARE = re.compile(rf"(?<![\w-])(?:sections?|secs?\.?|ss?\.|§)\s*({_NUMBER}"
+# "318, 7 years" lists one section and a term of imprisonment, not sections 318 and 7.
+_NUMBER = rf"\d{{1,3}}[A-Z]{{0,3}}(?!\d){NOT_A_QUANTITY}(?:\(\w{{1,4}}\))*"
+# "section 318", "sections 303 and 304", "s. 498A", "§ 420", "धारा 420".
+# Not "sub-section (4)".
+_BARE = re.compile(rf"(?<![\w-])(?:sections?|secs?\.?|ss?\.|§|धारा|dhara)\s*({_NUMBER}"
                    rf"(?:\s*(?:,|and|or|&|to)\s*{_NUMBER})*)", re.IGNORECASE)
 # A number right after "(" is a sub-section: the 2 of "117(2)" is not section 2.
 _EACH = re.compile(r"(?<![(\w])(\d{1,3}[A-Z]{0,3})(?!\d)", re.IGNORECASE)
-_SENTENCE = re.compile(r"(?<=[.!?])\s+")
+# A sentence ends at . ! ? or the Hindi danda, but not at the stop of "s." or "Sec.":
+# splitting there would part a mention from its number and let it survive the cut.
+_SENTENCE = re.compile(r"(?<!\bs\.)(?<!\bss\.)(?<!\bsec\.)(?<!\bsecs\.)(?<=[.!?।])\s+",
+                       re.IGNORECASE)
 
 
 def mentions(text: str) -> tuple[frozenset[str], frozenset[str]]:
     """(sections named with their code as ids, bare section numbers)."""
+    text = text.translate(DIGITS)
     coded = frozenset(references(text))
     bare = frozenset(n.upper() for m in _BARE.finditer(text) for n in _EACH.findall(m.group(1)))
     return coded, bare
