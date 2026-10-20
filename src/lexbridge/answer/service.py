@@ -11,7 +11,8 @@ from __future__ import annotations
 
 import json
 from collections.abc import Collection, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+from datetime import date
 from enum import StrEnum
 from typing import Protocol
 
@@ -27,6 +28,7 @@ from lexbridge.answer.prompt import (
 from lexbridge.answer.verify import strip_unsupported, unsupported
 from lexbridge.bundle import Bundle
 from lexbridge.ingest.graph import Relation
+from lexbridge.query.dates import Period
 from lexbridge.query.route import Reason, route
 from lexbridge.query.understand import understand
 from lexbridge.retrieve.base import Retriever
@@ -101,8 +103,17 @@ def _candidates(sources: Sequence[Section]) -> list[Section]:
     return [first[a] for a in (Act.IPC, Act.BNS) if a in first]
 
 
-def answer(question: str, *, retriever: Retriever, bundle: Bundle, chat: Chat) -> Answer:
+def answer(question: str, *, retriever: Retriever, bundle: Bundle, chat: Chat,
+           offence_date: date | None = None) -> Answer:
+    """offence_date, when the user gives one, replaces every date read from the text.
+
+    Reading the offence date out of free text keeps a residual error rate (ADR 0003), so
+    a reader who sees the stated assumption is wrong can correct it here.
+    """
     facts = understand(question)
+    if offence_date is not None:
+        facts = replace(facts, periods=(Period(offence_date, offence_date),),
+                        incomplete_date=False)
     decided = route(facts, maps=True)
     sources = [bundle.section(h.section_id) for h in retriever.search(question, SOURCES)]
     calls: list[Completion] = []

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping, Sequence
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -63,6 +64,27 @@ def test_a_dated_question_is_answered_from_its_code_with_the_date_stated(
     assert (result.citations, result.act, result.reason) == (("BNS:303",), Act.BNS,
                                                              Reason.DATE)
     assert "[1] BNS section 303: Theft" in chat.sent[0][1]["content"]
+
+
+def test_an_explicit_offence_date_overrides_the_dates_in_the_text(bundle: Bundle) -> None:
+    chat = Script(reply("Theft is punished under IPC 379.", 1))
+
+    result = answer("My phone was stolen on 5 August 2024.", retriever=Fixed("IPC:379"),
+                    bundle=bundle, chat=chat, offence_date=date(2024, 3, 5))
+
+    assert (result.act, result.reason) == (Act.IPC, Reason.DATE)
+    assert result.text.startswith("Assuming the offence was committed on 5 March 2024, "
+                                  "the Indian Penal Code (IPC) applies.")
+
+
+def test_an_explicit_offence_date_answers_a_question_that_gives_none(bundle: Bundle) -> None:
+    chat = Script(reply("Theft is punished under BNS 303(2).", 1))
+
+    result = answer("What is the punishment for theft?", retriever=Fixed("BNS:303"),
+                    bundle=bundle, chat=chat, offence_date=date(2025, 1, 2))
+
+    assert (result.status, result.act) == (Status.ANSWERED, Act.BNS)
+    assert len(chat.sent) == 1  # no scope check: the question was routed
 
 
 def test_an_unsupported_section_gets_one_retry_with_the_reason(bundle: Bundle) -> None:
