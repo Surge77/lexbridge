@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lexbridge"
-version = "0.0.1"
+version = "0.1.0"
 description = "Time-aware retrieval over India's old and new criminal codes: the right section for the date of the offence, cited, or no answer at all."
 readme = "README.md"
 requires-python = ">=3.11"
