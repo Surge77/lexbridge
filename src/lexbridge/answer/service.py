@@ -43,6 +43,7 @@ SCOPE_SYSTEM = (
     'topics are not. Reply with JSON only: {"in_scope": true | false}')
 NO_ANSWER = ("I could not produce an answer whose every section is supported by the "
              "provisions I retrieved, so I am not giving one.")
+NOT_COVERED = "The provisions I retrieved do not answer this question."
 
 
 class Status(StrEnum):
@@ -81,7 +82,8 @@ def _in_scope(chat: Chat, question: str, sources: Sequence[Section],
     ], max_tokens=300)  # room for a reasoning model to think before its one-line JSON
     calls.append(completion)
     try:
-        return bool(json.loads(completion.text).get("in_scope"))
+        # A clear "no", even as the string "false", is a verdict; anything else is not.
+        return json.loads(completion.text).get("in_scope") not in (False, "false")
     except (json.JSONDecodeError, AttributeError):
         return True  # unsure: asking for the date is the cautious answer
 
@@ -132,14 +134,17 @@ def answer(question: str, *, retriever: Retriever, bundle: Bundle, chat: Chat) -
         try:
             reply = parse(completion.text, len(sources))
         except MalformedReplyError as e:
-            reply = None
+            # The last reply that did parse is kept: a garbled retry must not throw away
+            # a first answer that only needed its unsupported sentence cut.
             convo = [*convo, {"role": "assistant", "content": completion.text},
                      {"role": "user", "content": f"That was not valid ({e}). Reply with "
                       "the JSON object only."}]
             continue
         if reply.declined:
-            return Answer(Status.DECLINED, reply.text, (), decided.act, decided.reason,
-                          tuple(sorted(allowed)), calls=calls)
+            # A decline is prose a user reads too, so it is held to the same sources.
+            text, _ = strip_unsupported(reply.text, allowed)
+            return Answer(Status.DECLINED, text or NOT_COVERED, (), decided.act,
+                          decided.reason, tuple(sorted(allowed)), calls=calls)
         bad = unsupported(reply.text, allowed)
         if first_bad is None:
             first_bad = bad

@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from lexbridge.answer.llm import Completion
-from lexbridge.answer.service import NO_ANSWER, Status, answer
+from lexbridge.answer.service import NO_ANSWER, NOT_COVERED, Status, answer
 from lexbridge.bundle import Bundle
 from lexbridge.query.route import Reason
 from lexbridge.retrieve.base import Hit
@@ -106,6 +106,35 @@ def test_a_malformed_reply_is_asked_again_then_given_up_on(bundle: Bundle) -> No
 
     assert (result.status, len(result.calls)) == (Status.DECLINED, 2)
     assert "JSON object only" in chat.sent[1][-1]["content"]
+
+
+def test_a_malformed_retry_does_not_discard_a_usable_first_reply(bundle: Bundle) -> None:
+    chat = Script(reply("BNS 303 applies. Also BNS 999.", 1), "not json")
+
+    result = answer("Theft on 5 August 2024?", retriever=Fixed("BNS:303"), bundle=bundle,
+                    chat=chat)
+
+    assert result.status is Status.ANSWERED
+    assert result.text.endswith("BNS 303 applies.")
+    assert (result.first_draft_unsupported, result.removed) == (("BNS:999",), ("BNS:999",))
+
+
+@pytest.mark.parametrize("text", ["Section 999 covers this, not the sources.", ""])
+def test_a_decline_names_no_unsupported_section_and_is_never_empty(
+        bundle: Bundle, text: str) -> None:
+    chat = Script(reply(text, status="declined"))
+
+    result = answer("Cheque bounce in 2025?", retriever=Fixed("BNS:318"), bundle=bundle,
+                    chat=chat)
+
+    assert (result.status, result.text) == (Status.DECLINED, NOT_COVERED)
+
+
+def test_a_scope_verdict_of_the_string_false_is_out_of_scope(bundle: Bundle) -> None:
+    result = answer("What is the capital of Australia?", retriever=Fixed("IPC:420"),
+                    bundle=bundle, chat=Script('{"in_scope": "false"}'))
+
+    assert result.status is Status.DECLINED
 
 
 def test_the_model_may_decline_when_the_sources_do_not_answer(bundle: Bundle) -> None:
