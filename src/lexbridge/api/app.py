@@ -4,29 +4,33 @@ POST /chat answers with a plain JSON body, not a token stream: an answer is chec
 against its sources before any of it may be shown (ADR 0004), so streaming would show
 section numbers that verification has not passed yet.
 
-Errors share one shape, {"error": {"code", "message"}}, and never carry an exception's
-own text: provider messages and paths are for the server log, not the client.
+The model's free tier is the resource to protect: its daily token budget is shared by
+every visitor. So each client is limited per minute and per day, model calls are capped
+across all clients, only so many answers run at once, and a repeated question is served
+from the cache without a model call.
 """
 
 from __future__ import annotations
 
 import asyncio
+import ipaddress
 import logging
 import math
+import sqlite3
 import time
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import date
 from typing import Annotated
 
 from fastapi import FastAPI, Path, Request, Response
-from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
-from starlette.exceptions import HTTPException
 
 from lexbridge.answer.llm import LLMUnavailableError, ProviderError
-from lexbridge.answer.service import Answer
-from lexbridge.api.guard import AnswerCache, RateLimiter
+from lexbridge.answer.service import Answer, Status
+from lexbridge.api import errors
+from lexbridge.api.errors import ApiError
+from lexbridge.api.guard import AnswerCache, Limits, RateLimiter
 from lexbridge.api.schemas import (
     SECTION_ID,
     ChatRequest,
@@ -41,6 +45,10 @@ from lexbridge.bundle import Bundle
 
 logger = logging.getLogger(__name__)
 SectionId = Annotated[str, Path(pattern=SECTION_ID)]
+# A decline can come from a malformed or unsupported model reply, which a retry may not
+# repeat; only answers and clarifications are worth serving again.
+CACHEABLE = frozenset({Status.ANSWERED, Status.CLARIFY})
+EVERYONE = "*"
 
 
 @dataclass(frozen=True)
@@ -50,56 +58,91 @@ class Services:
     # can be tested without models and served with them.
     ask: Callable[[str, date | None], Answer]
     traces: TraceLog
-    limiter: RateLimiter
+    limits: Limits
     cache: AnswerCache[tuple[str, date | None], Answer]
+    # How many addresses trusted proxies append to X-Forwarded-For (1 behind one proxy).
+    # 0 trusts the header not at all and limits by the connecting address.
+    proxy_hops: int = 0
+    max_in_flight: int = 4
 
 
-class ApiError(Exception):
-    def __init__(self, status: int, code: str, message: str,
-                 headers: dict[str, str] | None = None) -> None:
-        super().__init__(code)
-        self.status, self.code, self.message, self.headers = status, code, message, headers
+def client_of(request: Request, proxy_hops: int) -> str:
+    """Who to limit: the address the trusted proxy saw, never one the client wrote.
+
+    A proxy appends the address it received from, so the client controls everything left
+    of the last `proxy_hops` entries and nothing at or right of it.
+    """
+    address = request.client.host if request.client else "unknown"
+    if proxy_hops:
+        forwarded = [a.strip() for a in request.headers.get("x-forwarded-for", "").split(",")
+                     if a.strip()]
+        if len(forwarded) >= proxy_hops:
+            address = forwarded[-proxy_hops]
+    try:
+        ip = ipaddress.ip_address(address)
+    except ValueError:
+        return address
+    # One IPv6 subscriber is handed a whole /64; limit it as one client.
+    return str(ipaddress.ip_network(f"{ip}/64", strict=False)) if ip.version == 6 else str(ip)
 
 
-def _error(status: int, code: str, message: str, **extra: object) -> JSONResponse:
-    return JSONResponse({"error": {"code": code, "message": message, **extra}},
-                        status_code=status)
-
-
-def _install_error_handlers(app: FastAPI) -> None:
-    @app.exception_handler(ApiError)
-    async def api_error(_: Request, e: ApiError) -> JSONResponse:
-        response = _error(e.status, e.code, e.message)
-        response.headers.update(e.headers or {})
-        return response
-
-    @app.exception_handler(RequestValidationError)
-    async def invalid(_: Request, e: RequestValidationError) -> JSONResponse:
-        fields = [{"field": str(err["loc"][-1]), "message": err["msg"]} for err in e.errors()]
-        return _error(422, "INVALID_REQUEST", "The request is not valid.", fields=fields)
-
-    @app.exception_handler(HTTPException)
-    async def http_error(_: Request, e: HTTPException) -> JSONResponse:
-        code = "NOT_FOUND" if e.status_code == 404 else "HTTP_ERROR"
-        return _error(e.status_code, code, "Not found." if e.status_code == 404
-                      else "The request could not be handled.")
-
-    @app.exception_handler(Exception)
-    async def unexpected(_: Request, e: Exception) -> JSONResponse:
-        logger.exception("unhandled error: %s", type(e).__name__)
-        return _error(500, "INTERNAL", "Something went wrong. Please try again later.")
-
-
-def _client(request: Request) -> str:
-    # The peer address. Behind a proxy, uvicorn's --proxy-headers rewrites it from the
-    # proxy's X-Forwarded-For; a header from the open internet is never trusted here.
-    return request.client.host if request.client else "unknown"
+def _retry_after(wait: float) -> dict[str, str]:
+    return {"Retry-After": str(max(1, math.ceil(wait)))}
 
 
 def create_app(services: Services) -> FastAPI:
-    app = FastAPI(title="LexBridge", version="0.1.0")
-    _install_error_handlers(app)
+    app = FastAPI(title="LexBridge", version="0.1.0", docs_url=None, redoc_url=None,
+                  openapi_url=None)
+    errors.install(app)
     s = services
+    # Its own threads, so slow model calls cannot starve trace writes and other work.
+    pool = ThreadPoolExecutor(max_workers=max(1, s.max_in_flight),
+                              thread_name_prefix="answer")
+    in_flight = 0  # touched only on the event loop's thread
+
+    def limit(request: Request, *also: RateLimiter) -> None:
+        client = client_of(request, s.proxy_hops)
+        for limiter in (s.limits.per_minute, *also):
+            if (wait := limiter.wait(client)) > 0:
+                raise ApiError(429, "RATE_LIMITED", "Too many requests; please wait a "
+                               "moment.", _retry_after(wait))
+
+    async def ask(question: str, offence_date: date | None) -> Answer:
+        nonlocal in_flight
+        if in_flight >= s.max_in_flight:
+            raise ApiError(503, "BUSY", "Several questions are being answered right now. "
+                           "Please try again in a few seconds.", _retry_after(5))
+        if (wait := s.limits.model_calls.wait(EVERYONE)) > 0:
+            raise ApiError(503, "DAILY_LIMIT", "Today's free answering budget is used up. "
+                           "Please try again later.", _retry_after(wait))
+        in_flight += 1
+        try:
+            return await asyncio.get_running_loop().run_in_executor(
+                pool, s.ask, question, offence_date)
+        except LLMUnavailableError as e:
+            logger.warning("no model available: %s", e)
+            raise ApiError(503, "LLM_UNAVAILABLE", "The answering service is busy. "
+                           "Please try again in a few minutes.") from e
+        except ProviderError as e:
+            logger.error("model provider rejected the request: %s", e)
+            raise ApiError(502, "LLM_ERROR", "The answering service failed. "
+                           "Please try again later.") from e
+        finally:
+            in_flight -= 1
+
+    async def trace(question: str, result: Answer, start: float, cached: bool) -> str | None:
+        def write() -> str:
+            return s.traces.record(
+                question=question, status=result.status.value,
+                act=result.act.value if result.act else None, reason=result.reason.value,
+                citations=result.citations, calls=0 if cached else len(result.calls),
+                milliseconds=(time.perf_counter() - start) * 1000, cached=cached)
+        try:
+            return await asyncio.get_running_loop().run_in_executor(None, write)
+        except sqlite3.Error as e:
+            # The answer is paid for; losing its trace must not lose it too.
+            logger.error("trace not written: %s", type(e).__name__)
+            return None
 
     @app.get("/health")
     async def health() -> HealthOut:
@@ -107,7 +150,8 @@ def create_app(services: Services) -> FastAPI:
                          sections=len(s.bundle.sections))
 
     @app.get("/section/{section_id}")
-    async def section(section_id: SectionId) -> SectionOut:
+    async def section(section_id: SectionId, request: Request) -> SectionOut:
+        limit(request)
         if section_id not in s.bundle:
             raise ApiError(404, "NOT_FOUND", "No such section in this bundle.")
         found = s.bundle.section(section_id)
@@ -115,7 +159,8 @@ def create_app(services: Services) -> FastAPI:
                           title=found.title, text=found.text, chapter=found.chapter)
 
     @app.get("/map/{section_id}")
-    async def mapping(section_id: SectionId) -> MapOut:
+    async def mapping(section_id: SectionId, request: Request) -> MapOut:
+        limit(request)
         if section_id not in s.bundle:
             raise ApiError(404, "NOT_FOUND", "No such section in this bundle.")
         return MapOut(id=section_id, replaced_by=list(s.bundle.replaced_by(section_id)),
@@ -123,45 +168,26 @@ def create_app(services: Services) -> FastAPI:
 
     @app.post("/chat")
     async def chat(body: ChatRequest, request: Request) -> ChatResponse:
-        if (wait := s.limiter.wait(_client(request))) > 0:
-            raise ApiError(429, "RATE_LIMITED", "Too many questions; please wait a moment.",
-                           {"Retry-After": str(math.ceil(wait))})
-        key = (body.question.casefold(), body.offence_date)
-        loop = asyncio.get_running_loop()
+        limit(request, s.limits.per_day)
+        question = " ".join(body.question.split())
+        key = (question.casefold(), body.offence_date)
         start = time.perf_counter()
         result = s.cache.get(key)
         cached = result is not None
         if result is None:
-            try:
-                # Embedding the question and the model call block; keep them off the loop.
-                result = await loop.run_in_executor(None, s.ask, body.question,
-                                                    body.offence_date)
-            except LLMUnavailableError as e:
-                logger.warning("no model available: %s", e)
-                raise ApiError(503, "LLM_UNAVAILABLE", "The answering service is busy. "
-                               "Please try again in a few minutes.") from e
-            except ProviderError as e:
-                logger.error("model provider rejected the request: %s", e)
-                raise ApiError(502, "LLM_ERROR", "The answering service failed. "
-                               "Please try again later.") from e
-            s.cache.put(key, result)
-        answered = result
-        trace_id = await loop.run_in_executor(None, lambda: s.traces.record(
-            question=body.question, status=answered.status.value,
-            act=answered.act.value if answered.act else None,
-            reason=answered.reason.value, citations=answered.citations,
-            calls=0 if cached else len(answered.calls),
-            milliseconds=(time.perf_counter() - start) * 1000, cached=cached))
-        return ChatResponse(trace_id=trace_id, status=answered.status.value,
-                            text=answered.text,
-                            act=answered.act.value if answered.act else None,
-                            citations=list(answered.citations),
-                            sources=list(answered.allowed), cached=cached)
+            result = await ask(question, body.offence_date)
+            if result.status in CACHEABLE:
+                s.cache.put(key, result)
+        return ChatResponse(trace_id=await trace(question, result, start, cached),
+                            status=result.status.value, text=result.text,
+                            act=result.act.value if result.act else None,
+                            citations=list(result.citations), sources=list(result.allowed),
+                            cached=cached)
 
     @app.post("/feedback", status_code=204)
-    async def feedback(body: FeedbackRequest) -> Response:
-        loop = asyncio.get_running_loop()
-        found = await loop.run_in_executor(
+    async def feedback(body: FeedbackRequest, request: Request) -> Response:
+        limit(request)
+        found = await asyncio.get_running_loop().run_in_executor(
             None, lambda: s.traces.feedback(body.trace_id, helpful=body.helpful))
         if not found:
             raise ApiError(404, "NOT_FOUND", "No answer has that trace id.")

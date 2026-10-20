@@ -49,8 +49,39 @@ def test_clients_are_limited_separately() -> None:
     assert limiter.wait("b") == 0
 
 
+def test_a_client_whose_window_has_emptied_is_forgotten() -> None:
+    clock = Clock()
+    limiter = RateLimiter(limit=1, window_seconds=60, clock=clock)
+    for n in range(100):
+        limiter.wait(f"10.0.0.{n}")
+
+    clock.now += 60
+    limiter.wait("fresh")
+
+    assert limiter.tracked == 1
+
+
+def test_when_too_many_clients_are_tracked_new_ones_are_refused() -> None:
+    limiter = RateLimiter(limit=5, window_seconds=60, max_clients=2, clock=Clock())
+    limiter.wait("a")
+    limiter.wait("b")
+
+    assert limiter.wait("c") > 0
+    assert limiter.wait("a") == 0
+
+
+def test_a_cached_answer_expires() -> None:
+    clock = Clock()
+    cache: AnswerCache[str, int] = AnswerCache(capacity=2, ttl_seconds=10, clock=clock)
+    cache.put("a", 1)
+
+    clock.now += 10
+
+    assert cache.get("a") is None
+
+
 def test_the_cache_forgets_the_least_recently_used_answer_first() -> None:
-    cache: AnswerCache[str, int] = AnswerCache(capacity=2)
+    cache: AnswerCache[str, int] = AnswerCache(capacity=2, ttl_seconds=60)
     cache.put("a", 1)
     cache.put("b", 2)
     assert cache.get("a") == 1  # a is now the most recent

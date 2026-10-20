@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -25,13 +25,16 @@ class ChatRequest(BaseModel):
     @field_validator("offence_date")
     @classmethod
     def _not_in_the_future(cls, value: date | None) -> date | None:
-        if value is not None and value > date.today():
+        # A day of slack: the server runs on UTC, and India is 5h30 ahead of it, so an
+        # Indian user's "today" is the server's tomorrow for part of every day.
+        if value is not None and value > date.today() + timedelta(days=1):
             raise ValueError("offence_date cannot be in the future")
         return value
 
 
 class ChatResponse(BaseModel):
-    trace_id: str
+    # None when the trace could not be written: the answer is still given.
+    trace_id: str | None
     status: str  # answered | clarify | declined
     text: str
     act: str | None
