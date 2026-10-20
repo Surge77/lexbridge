@@ -20,13 +20,13 @@ from lexbridge.api.app import Services, create_app
 from lexbridge.api.guard import AnswerCache, RateLimiter
 
 # Ten questions a minute is generous for a person and keeps one client from spending the
-# free tier's daily token budget (200k tokens, ~150 answers) for everyone.
+# free tier's daily token budget (200k tokens per model) for everyone.
 CHAT_PER_MINUTE = 10
 CACHED_ANSWERS = 512
 
 
 def build() -> FastAPI:  # pragma: no cover - loads real models and reads the environment
-    from lexbridge.answer.llm import PROVIDERS, Gateway
+    from lexbridge.answer.llm import CHAIN, Gateway
     from lexbridge.answer.service import Answer, answer
     from lexbridge.api.traces import TraceLog
     from lexbridge.bundle import load_bundle
@@ -44,7 +44,7 @@ def build() -> FastAPI:  # pragma: no cover - loads real models and reads the en
     scorer = CrossEncoderScorer(spec.reranker) if spec.reranker else None
     retriever = Pipeline(bundle, dense, scorer=scorer, rerank_depth=spec.rerank_depth,
                          routed=spec.route, references=spec.references)
-    chat = Gateway([PROVIDERS["groq"], PROVIDERS["gemini"]])
+    chat = Gateway(CHAIN)
 
     def ask(question: str, offence_date: date | None) -> Answer:
         return answer(question, retriever=retriever, bundle=bundle, chat=chat,
