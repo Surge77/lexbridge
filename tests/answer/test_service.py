@@ -134,6 +134,26 @@ def test_a_question_the_router_cannot_place_is_asked_back_without_a_model_answer
     assert "IPC 379: Punishment for theft" in scope[1]["content"]
 
 
+def test_a_section_a_source_itself_names_may_be_named_in_the_answer(bundle: Bundle) -> None:
+    # The factory's IPC 379 refers to 378, as IPC 438's text names 437.
+    chat = Script(reply("Theft is defined in section 378 and punished under section 379.", 1))
+
+    result = answer("My phone was stolen on 5 March 2024.", retriever=Fixed("IPC:379"),
+                    bundle=bundle, chat=chat)
+
+    assert result.status is Status.ANSWERED
+    assert result.removed == () and result.first_draft_unsupported == ()
+    assert "IPC:378" in result.allowed
+
+
+def test_a_clarification_may_name_what_its_candidates_name(bundle: Bundle) -> None:
+    result = answer("What is the punishment for theft?", retriever=Fixed("IPC:379"),
+                    bundle=bundle, chat=Script('{"in_scope": true}'))
+
+    assert result.status is Status.CLARIFY
+    assert set(result.allowed) == {"IPC:379", "IPC:378"}
+
+
 def test_an_out_of_scope_question_is_declined_not_asked_for_a_date(bundle: Bundle) -> None:
     result = answer("What is the capital of Australia?", retriever=Fixed("IPC:420"),
                     bundle=bundle, chat=Script('{"in_scope": false}'))

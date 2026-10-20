@@ -10,7 +10,7 @@ answer again; whatever it still names without support is cut out.
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping, Sequence
+from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Protocol
@@ -26,6 +26,7 @@ from lexbridge.answer.prompt import (
 )
 from lexbridge.answer.verify import strip_unsupported, unsupported
 from lexbridge.bundle import Bundle
+from lexbridge.ingest.graph import Relation
 from lexbridge.query.route import Reason, route
 from lexbridge.query.understand import understand
 from lexbridge.retrieve.base import Retriever
@@ -85,6 +86,11 @@ def _in_scope(chat: Chat, question: str, sources: Sequence[Section],
         return True  # unsure: asking for the date is the cautious answer
 
 
+def _named_by(bundle: Bundle, ids: Collection[str]) -> set[str]:
+    """Sections the statute text of these sections names ("described in section 437")."""
+    return {e.dst for e in bundle.edges if e.relation is Relation.REFERS_TO and e.src in ids}
+
+
 def _candidates(sources: Sequence[Section]) -> list[Section]:
     """The first source from each code, to show what the answer will turn on."""
     first: dict[Act, Section] = {}
@@ -105,12 +111,17 @@ def answer(question: str, *, retriever: Retriever, bundle: Bundle, chat: Chat) -
                           "Bharatiya Nyaya Sanhita, which are the only laws I cover.", (),
                           None, decided.reason, calls=calls)
         candidates = _candidates(sources)
+        ids = {s.id for s in candidates}
+        # The clarification quotes candidate titles, which can name other sections.
         return Answer(Status.CLARIFY, clarification(decided, candidates), (), None,
-                      decided.reason, tuple(s.id for s in candidates), calls=calls)
+                      decided.reason, tuple(sorted(ids | _named_by(bundle, ids))),
+                      calls=calls)
 
     table = correspondence(bundle.edges, facts.references)
-    # The table is grounded data too: its sections may be named as well as the sources.
-    allowed = ({s.id for s in sources} | set(facts.references)
+    source_ids = {s.id for s in sources}
+    # The table and the sources' own cross-references are grounded data too: their
+    # sections may be named as well as the sources.
+    allowed = (source_ids | _named_by(bundle, source_ids) | set(facts.references)
                | {e.src for e in table} | {e.dst for e in table})
     convo = messages(question, sources, decided, facts.references, table)
     first_bad: list[str] | None = None
