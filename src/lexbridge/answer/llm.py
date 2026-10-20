@@ -2,7 +2,8 @@
 
 Groq and Gemini both expose the OpenAI chat-completions shape, so one small client covers
 both and no vendor SDK is needed. A provider is skipped when its key is not set, and the
-next one is tried on a rate limit, a server error or a timeout. Anything else (a bad
+next one is tried on a rate limit, a server error, a timeout, a broken connection or a
+success whose body is not a chat completion. Anything else (a bad
 request, a rejected key) is a bug or a configuration error, and is raised rather than
 hidden behind a fallback.
 """
@@ -18,7 +19,8 @@ import httpx
 
 # Every external call has a deadline; a stuck provider must hand over, not hang a request.
 TIMEOUT_SECONDS = 10.0
-FALLBACK_STATUSES = frozenset({429, 500, 502, 503, 504})
+# 413 is how Groq refuses a request over the tokens-per-minute budget: busy, not wrong.
+FALLBACK_STATUSES = frozenset({408, 413, 429, 500, 502, 503, 504})
 
 
 @dataclass(frozen=True)
@@ -58,6 +60,16 @@ class ProviderError(RuntimeError):
     """A provider rejected the request itself: a bug or a bad key, not a busy server."""
 
 
+def _error(response: httpx.Response) -> dict[str, object]:
+    """The OpenAI-shaped {"error": {...}} of a response, or {} for any other body."""
+    try:
+        body = response.json()
+    except ValueError:
+        return {}
+    error = body.get("error") if isinstance(body, dict) else None
+    return error if isinstance(error, dict) else {}
+
+
 def _rejected_json(response: httpx.Response) -> str | None:
     """The model's own text when the provider refused it as invalid JSON, else None.
 
@@ -65,15 +77,18 @@ def _rejected_json(response: httpx.Response) -> str | None:
     model wrote bad JSON. That is the model failing, not the request, so it is handed back
     as a completion for the caller's malformed-reply handling to retry.
     """
-    if response.status_code != 400:
-        return None
-    try:
-        error = response.json().get("error", {})
-    except ValueError:
-        return None
-    if error.get("code") != "json_validate_failed":
+    error = _error(response)
+    if response.status_code != 400 or error.get("code") != "json_validate_failed":
         return None
     return str(error.get("failed_generation") or "")
+
+
+def _content(response: httpx.Response) -> str | None:
+    """The reply text of a success, or None when the body is not a chat completion."""
+    try:
+        return response.json()["choices"][0]["message"]["content"] or ""
+    except (ValueError, LookupError, TypeError):
+        return None
 
 
 class Gateway:
@@ -104,8 +119,8 @@ class Gateway:
                 response = self._client.post(f"{provider.base_url}/chat/completions",
                                              json=body,
                                              headers={"Authorization": f"Bearer {key}"})
-            except httpx.TimeoutException:
-                failures.append(f"{provider.name}: timeout")
+            except httpx.TransportError as e:  # a timeout, a refused or dropped connection
+                failures.append(f"{provider.name}: {type(e).__name__}")
                 continue
             if response.status_code in FALLBACK_STATUSES:
                 failures.append(f"{provider.name}: HTTP {response.status_code}")
@@ -115,9 +130,13 @@ class Gateway:
                 return Completion(rejected, provider.name, provider.model, elapsed)
             if response.is_error:
                 # Raised, not fallen back from: any other 4xx is a bug or a bad key, and
-                # the next provider would only hide it. The body says which.
-                raise ProviderError(f"{provider.name}: HTTP {response.status_code}: "
-                                    f"{response.text[:300]}")
-            text = response.json()["choices"][0]["message"]["content"] or ""
+                # the next provider would only hide it. Only the error code is kept: the
+                # body's free text can describe the account, and this message is logged.
+                code = _error(response).get("code")
+                raise ProviderError(f"{provider.name}: HTTP {response.status_code}"
+                                    + (f" {code}" if code else ""))
+            if (text := _content(response)) is None:
+                failures.append(f"{provider.name}: unreadable response")
+                continue
             return Completion(text, provider.name, provider.model, elapsed)
         raise LLMUnavailableError("; ".join(failures))

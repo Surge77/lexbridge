@@ -41,7 +41,8 @@ def test_the_first_provider_answers_with_its_own_key_and_model() -> None:
     assert body["response_format"] == {"type": "json_object"}
 
 
-@pytest.mark.parametrize("status", [429, 503])
+# 413: Groq's answer to a request over the tokens-per-minute budget.
+@pytest.mark.parametrize("status", [408, 413, 429, 503])
 def test_a_rate_limit_or_server_error_falls_back_to_the_next(status: int) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(status) if request.url.host == "a.test" else ok("from b")
@@ -49,20 +50,45 @@ def test_a_rate_limit_or_server_error_falls_back_to_the_next(status: int) -> Non
     assert gateway(handler).complete([{"role": "user", "content": "hi"}]).provider == "b"
 
 
-def test_a_timeout_falls_back_to_the_next() -> None:
+@pytest.mark.parametrize("error", [httpx.ReadTimeout, httpx.ConnectError,
+                                   httpx.RemoteProtocolError])
+def test_a_timeout_or_broken_connection_falls_back_to_the_next(
+        error: type[httpx.TransportError]) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.host == "a.test":
-            raise httpx.ReadTimeout("slow", request=request)
+            raise error("gone", request=request)
         return ok("from b")
 
     assert gateway(handler).complete([{"role": "user", "content": "hi"}]).text == "from b"
 
 
-def test_a_bad_request_is_raised_with_its_reason_not_hidden_behind_a_fallback() -> None:
+@pytest.mark.parametrize("response", [
+    httpx.Response(200, json={"choices": []}),  # e.g. a safety block
+    httpx.Response(200, json={"choices": [{}]}),
+    httpx.Response(200, text="<html>busy</html>"),
+])
+def test_an_unreadable_success_falls_back_to_the_next(response: httpx.Response) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(401, json={"error": {"message": "invalid api key"}})
+        return response if request.url.host == "a.test" else ok("from b")
 
-    with pytest.raises(ProviderError, match=r"a: HTTP 401: .*invalid api key"):
+    assert gateway(handler).complete([{"role": "user", "content": "hi"}]).text == "from b"
+
+
+def test_a_bad_request_is_raised_with_its_code_not_hidden_behind_a_fallback() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(401, json={"error": {"code": "invalid_api_key",
+                                                   "message": "key ka is invalid"}})
+
+    with pytest.raises(ProviderError, match=r"^a: HTTP 401 invalid_api_key$"):
+        gateway(handler).complete([{"role": "user", "content": "hi"}])
+
+
+@pytest.mark.parametrize("body", [[{"error": {"code": "x"}}], {"error": "bad"}, "plain"])
+def test_an_error_body_of_any_shape_is_a_provider_error(body: object) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(400, json=body)
+
+    with pytest.raises(ProviderError, match=r"^a: HTTP 400"):
         gateway(handler).complete([{"role": "user", "content": "hi"}])
 
 
