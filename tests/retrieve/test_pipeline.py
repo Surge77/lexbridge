@@ -3,11 +3,15 @@ from __future__ import annotations
 import sys
 import types
 from collections.abc import Sequence
+from dataclasses import replace
+from datetime import date
 from pathlib import Path
 
 import pytest
 
 from lexbridge.bundle import Bundle
+from lexbridge.query.dates import Period
+from lexbridge.query.understand import understand
 from lexbridge.retrieve.base import Hit
 from lexbridge.retrieve.dense import DenseIndex
 from lexbridge.retrieve.pipeline import CITED_SCORE, PIPELINES, Pipeline, PipelineSpec
@@ -56,6 +60,16 @@ def test_routing_keeps_only_the_code_the_date_points_to(bundle: Bundle) -> None:
     assert after and all(h.section_id.startswith("BNS:") for h in after)
     # No date and no code named: nothing is filtered, and the answer will have to ask.
     assert {h.section_id.split(":")[0] for h in undated} == {"IPC", "BNS"}
+
+
+def test_facts_given_by_the_caller_decide_the_route_not_the_text(bundle: Bundle) -> None:
+    routed = Pipeline(bundle, DenseIndex.build(bundle, WordsEmbedder()), routed=True)
+    told = replace(understand("theft on 3 August 2024"),
+                   periods=(Period(date(2024, 3, 5), date(2024, 3, 5)),))
+
+    hits = routed.search("theft on 3 August 2024", k=10, facts=told)
+
+    assert hits and all(h.section_id.startswith("IPC:") for h in hits)
 
 
 def test_the_reranker_only_sees_the_routed_candidates(bundle: Bundle) -> None:

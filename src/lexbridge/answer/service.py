@@ -30,8 +30,8 @@ from lexbridge.bundle import Bundle
 from lexbridge.ingest.graph import Relation
 from lexbridge.query.dates import Period
 from lexbridge.query.route import Reason, route
-from lexbridge.query.understand import understand
-from lexbridge.retrieve.base import Retriever
+from lexbridge.query.understand import Facts, understand
+from lexbridge.retrieve.base import Hit
 from lexbridge.schema import Act, Section
 
 # Sources shown to the model. Retrieval puts the answer in the top 4 for most text
@@ -52,6 +52,10 @@ class Status(StrEnum):
     ANSWERED = "answered"
     CLARIFY = "clarify"  # the code depends on a date the question does not settle
     DECLINED = "declined"  # outside these codes, or the sources do not answer it
+
+
+class RoutedRetriever(Protocol):
+    def search(self, query: str, k: int, *, facts: Facts | None = None) -> list[Hit]: ...
 
 
 class Chat(Protocol):
@@ -103,7 +107,7 @@ def _candidates(sources: Sequence[Section]) -> list[Section]:
     return [first[a] for a in (Act.IPC, Act.BNS) if a in first]
 
 
-def answer(question: str, *, retriever: Retriever, bundle: Bundle, chat: Chat,
+def answer(question: str, *, retriever: RoutedRetriever, bundle: Bundle, chat: Chat,
            offence_date: date | None = None) -> Answer:
     """offence_date, when the user gives one, replaces every date read from the text.
 
@@ -115,7 +119,9 @@ def answer(question: str, *, retriever: Retriever, bundle: Bundle, chat: Chat,
         facts = replace(facts, periods=(Period(offence_date, offence_date),),
                         incomplete_date=False)
     decided = route(facts, maps=True)
-    sources = [bundle.section(h.section_id) for h in retriever.search(question, SOURCES)]
+    # The facts go along so retrieval routes as the answer does, explicit date included.
+    sources = [bundle.section(h.section_id)
+               for h in retriever.search(question, SOURCES, facts=facts)]
     calls: list[Completion] = []
 
     if decided.act is None:

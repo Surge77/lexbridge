@@ -11,10 +11,14 @@ from lexbridge.answer.llm import Completion
 from lexbridge.answer.service import NO_ANSWER, NOT_COVERED, Status, answer
 from lexbridge.bundle import Bundle
 from lexbridge.query.route import Reason
+from lexbridge.query.understand import Facts
 from lexbridge.retrieve.base import Hit
+from lexbridge.retrieve.dense import DenseIndex
+from lexbridge.retrieve.pipeline import Pipeline
 from lexbridge.schema import Act
 
 from ..eval.factory import build_bundle
+from ..retrieve.fakes import WordsEmbedder
 
 
 class Script:
@@ -34,11 +38,8 @@ class Fixed:
     def __init__(self, *ids: str) -> None:
         self.ids = ids
 
-    def search(self, query: str, k: int) -> list[Hit]:
+    def search(self, query: str, k: int, *, facts: Facts | None = None) -> list[Hit]:
         return [Hit(i, 1.0) for i in self.ids[:k]]
-
-    def search_many(self, queries: Sequence[str], k: int) -> list[list[Hit]]:
-        return [self.search(q, k) for q in queries]
 
 
 def reply(text: str, *citations: int, status: str = "answered") -> str:
@@ -75,6 +76,31 @@ def test_an_explicit_offence_date_overrides_the_dates_in_the_text(bundle: Bundle
     assert (result.act, result.reason) == (Act.IPC, Reason.DATE)
     assert result.text.startswith("Assuming the offence was committed on 5 March 2024, "
                                   "the Indian Penal Code (IPC) applies.")
+
+
+def test_an_explicit_offence_date_also_decides_which_sources_are_retrieved(
+        bundle: Bundle) -> None:
+    retriever = Pipeline(bundle, DenseIndex.build(bundle, WordsEmbedder()), routed=True,
+                         references=True)
+    chat = Script(reply("Theft is punished with imprisonment.", 1))
+
+    result = answer("My phone was stolen on 5 August 2024.", retriever=retriever,
+                    bundle=bundle, chat=chat, offence_date=date(2024, 3, 5))
+
+    assert result.act is Act.IPC
+    shown = chat.sent[0][1]["content"]
+    assert "] IPC section" in shown and "] BNS section" not in shown
+
+
+def test_an_explicit_date_does_not_turn_a_named_counterpart_question_into_a_dated_one(
+        bundle: Bundle) -> None:
+    chat = Script(reply("IPC 379 became BNS 303.", 1))
+
+    result = answer("What is the BNS equivalent of IPC 379?", retriever=Fixed("BNS:303"),
+                    bundle=bundle, chat=chat, offence_date=date(2020, 1, 1))
+
+    # It asks for the other code by name: the map answers it, whatever the date.
+    assert (result.act, result.reason) == (Act.BNS, Reason.MAP)
 
 
 def test_an_explicit_offence_date_answers_a_question_that_gives_none(bundle: Bundle) -> None:
