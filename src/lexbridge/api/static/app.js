@@ -22,15 +22,26 @@ function fill(list, ids) {
 }
 
 async function call(path, options) {
-  const response = await fetch(path, options);
+  let response;
+  try {
+    response = await fetch(path, options);
+  } catch {
+    throw new Error("Could not reach LexBridge. Check your connection and try again.");
+  }
   if (response.status === 204) return null;
-  const body = await response.json();
-  if (!response.ok) {
+  // A proxy in front of the app can answer with an HTML error page, not our JSON.
+  const body = await response.json().catch(() => null);
+  if (!response.ok || body === null) {
     const wait = response.headers.get("Retry-After");
-    const message = body?.error?.message ?? "Something went wrong.";
+    const message = body?.error?.message ?? `The service is unavailable (HTTP ${response.status}).`;
     throw new Error(wait ? `${message} (try again in ${wait}s)` : message);
   }
   return body;
+}
+
+function fail(error) {
+  $("error").textContent = error.message;
+  show($("error"), true);
 }
 
 function render(answer) {
@@ -47,6 +58,7 @@ function render(answer) {
   traceId = answer.trace_id;
   show($("feedback"), Boolean(traceId));
   show($("thanks"), false);
+  voting(true);
   show($("result"), true);
 }
 
@@ -66,8 +78,7 @@ async function ask(event) {
       body: JSON.stringify(body),
     }));
   } catch (e) {
-    $("error").textContent = e.message;
-    show($("error"), true);
+    fail(e);
   } finally {
     $("submit").disabled = false;
     $("submit").textContent = "Ask";
@@ -75,6 +86,7 @@ async function ask(event) {
 }
 
 async function openSection(sectionId) {
+  show($("error"), false);
   try {
     const [section, map] = await Promise.all([
       call(`/section/${encodeURIComponent(sectionId)}`),
@@ -88,14 +100,19 @@ async function openSection(sectionId) {
     show($("section"), true);
     $("section").scrollIntoView({ behavior: "smooth", block: "nearest" });
   } catch (e) {
-    $("error").textContent = e.message;
-    show($("error"), true);
+    fail(e);
   }
+}
+
+function voting(enabled) {
+  $("feedback").querySelectorAll("button").forEach((b) => { b.disabled = !enabled; });
 }
 
 async function feedback(event) {
   const helpful = event.target.dataset.helpful;
   if (helpful === undefined || !traceId) return;
+  show($("error"), false);
+  voting(false);  // one vote per answer
   try {
     await call("/feedback", {
       method: "POST",
@@ -104,8 +121,8 @@ async function feedback(event) {
     });
     show($("thanks"), true);
   } catch (e) {
-    $("error").textContent = e.message;
-    show($("error"), true);
+    voting(true);
+    fail(e);
   }
 }
 
