@@ -19,6 +19,11 @@ from starlette.exceptions import HTTPException
 logger = logging.getLogger(__name__)
 # A question is at most 1000 characters; a few KB of JSON is every honest request.
 MAX_BODY_BYTES = 8 * 1024
+# The page loads only its own script and stylesheet, so nothing else may run: an answer
+# that somehow carried markup could not execute. Hugging Face shows a Space inside its
+# own page, so that one origin may frame it.
+CSP = ("default-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; "
+       "form-action 'self'; frame-ancestors 'self' https://huggingface.co")
 
 
 class ApiError(Exception):
@@ -63,6 +68,15 @@ def install(app: FastAPI) -> None:
             logger.error("unhandled %s\n%s", type(e).__name__,
                          "".join(traceback.format_tb(e.__traceback__)))
             return error(500, "INTERNAL", "Something went wrong. Please try again later.")
+
+    @app.middleware("http")
+    async def secure_headers(request: Request,
+                             call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+        response = await call_next(request)
+        response.headers["Content-Security-Policy"] = CSP
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        return response
 
     @app.middleware("http")
     async def cap_body(request: Request,

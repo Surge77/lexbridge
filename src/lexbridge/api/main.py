@@ -30,6 +30,8 @@ QUESTIONS_PER_DAY = 50
 # Two Groq models at 200k tokens a day each, ~700 tokens an answer (the 92-case eval spent
 # ~65k): about 570 answers. 400 leaves room for scope checks and retries.
 MODEL_CALLS_PER_DAY = 400
+# Opening an answer's sections costs two lookups each and no model call.
+LOOKUPS_PER_MINUTE = 60
 CACHED_ANSWERS = 512
 # A day: long enough to absorb repeats, short enough that a fixed answer does not linger.
 CACHE_SECONDS = DAY
@@ -69,7 +71,8 @@ def build() -> FastAPI:  # pragma: no cover - loads real models and reads the en
 
     limits = Limits(per_minute=RateLimiter(limit=PER_MINUTE, window_seconds=60),
                     per_day=RateLimiter(limit=QUESTIONS_PER_DAY, window_seconds=DAY),
-                    model_calls=RateLimiter(limit=MODEL_CALLS_PER_DAY, window_seconds=DAY))
+                    model_calls=RateLimiter(limit=MODEL_CALLS_PER_DAY, window_seconds=DAY),
+                    lookups=RateLimiter(limit=LOOKUPS_PER_MINUTE, window_seconds=60))
     traces = TraceLog(Path(os.environ.get("LEXBRIDGE_TRACES", "traces.sqlite3")),
                       key=_trace_key())
     return create_app(Services(

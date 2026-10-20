@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LexBridge</title>
+  <meta name="description" content="Which section of India's criminal law applies, IPC or BNS, for the date of the offence. Cited, or no answer at all.">
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>LexBridge</h1>
+      <p class="lede">On 1 July 2024 the Bharatiya Nyaya Sanhita replaced the Indian Penal Code,
+        and every section number changed. Which one applies depends on <em>when</em> the offence
+        happened. Ask in plain words; every section in the answer is checked against the law's text.</p>
+    </header>
+
+    <form id="ask" autocomplete="off">
+      <label for="question">Your question</label>
+      <textarea id="question" name="question" rows="3" maxlength="1000" required
+        placeholder="Someone cheated me of ₹50,000 in March 2024. Which section applies?"></textarea>
+      <div class="row">
+        <div class="field">
+          <label for="date">Date of the offence <span class="hint">(optional, overrides dates in the question)</span></label>
+          <input id="date" name="date" type="date">
+        </div>
+        <button id="submit" type="submit">Ask</button>
+      </div>
+      <div class="examples" aria-label="Example questions">
+        <button type="button" data-q="Someone cheated me of money in August 2024. Which section applies?">Cheating, Aug 2024</button>
+        <button type="button" data-q="What is the BNS equivalent of IPC section 302?">IPC 302 → BNS</button>
+        <button type="button" data-q="What is the punishment for theft?">Theft, no date</button>
+      </div>
+    </form>
+
+    <section id="result" hidden aria-live="polite">
+      <div class="meta"><span id="status" class="badge"></span><span id="act" class="badge code"></span><span id="cached" class="badge muted" hidden>from cache</span></div>
+      <p id="text"></p>
+      <div id="cites-wrap" hidden>
+        <h2>Cited</h2>
+        <ul id="cites" class="chips"></ul>
+      </div>
+      <details id="sources-wrap" hidden>
+        <summary>Every section this answer was allowed to name</summary>
+        <ul id="sources" class="chips"></ul>
+      </details>
+      <div id="feedback" class="feedback" hidden>
+        <span>Was this useful?</span>
+        <button type="button" data-helpful="true">Yes</button>
+        <button type="button" data-helpful="false">No</button>
+        <span id="thanks" hidden>Thanks.</span>
+      </div>
+    </section>
+
+    <aside id="section" hidden>
+      <div class="section-head"><h2 id="section-title"></h2><button type="button" id="close" aria-label="Close section">×</button></div>
+      <p id="section-map" class="hint"></p>
+      <pre id="section-text"></pre>
+    </aside>
+
+    <p id="error" class="error" role="alert" hidden></p>
+
+    <footer id="notice">General information about the Indian Penal Code and the Bharatiya Nyaya Sanhita,
+      not legal advice. Do not include personal details in questions.</footer>
+  </main>
+</body>
+</html>

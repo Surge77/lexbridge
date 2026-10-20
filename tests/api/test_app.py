@@ -73,7 +73,8 @@ def client_for(tmp_path: Path, asker: Asker, *, per_minute: int = 100, model_cal
                traces: type[TraceLog] = TraceLog) -> Client:
     limits = Limits(per_minute=RateLimiter(limit=per_minute, window_seconds=60),
                     per_day=RateLimiter(limit=100, window_seconds=86_400),
-                    model_calls=RateLimiter(limit=model_calls, window_seconds=86_400))
+                    model_calls=RateLimiter(limit=model_calls, window_seconds=86_400),
+                    lookups=RateLimiter(limit=100, window_seconds=60))
     services = Services(bundle=build_bundle(tmp_path / "v1"), ask=asker,
                         traces=traces(tmp_path / "traces.sqlite3", key=b"k" * 32),
                         limits=limits, cache=AnswerCache(capacity=8, ttl_seconds=60),
@@ -282,3 +283,25 @@ def test_a_wrong_method_keeps_its_allow_header(client: Client) -> None:
 
 def test_the_interactive_docs_are_not_served(client: Client) -> None:
     assert [client.get(p).status_code for p in ("/docs", "/openapi.json")] == [404, 404]
+
+
+def test_the_page_and_its_assets_are_served_with_a_strict_policy(client: Client) -> None:
+    page = client.get("/")
+    script = client.get("/static/app.js")
+
+    assert page.status_code == 200 and "<title>LexBridge</title>" in page.text
+    assert script.status_code == 200 and "textContent" in script.text
+    policy = page.headers["content-security-policy"]
+    assert "default-src 'self'" in policy and "unsafe-inline" not in policy
+    # Hugging Face shows a Space inside its own page.
+    assert "frame-ancestors 'self' https://huggingface.co" in policy
+    assert page.headers["x-content-type-options"] == "nosniff"
+
+
+def test_looking_up_sections_does_not_use_up_the_question_allowance(tmp_path: Path) -> None:
+    client = client_for(tmp_path, Asker(), per_minute=1)
+    for _ in range(4):
+        assert client.get("/section/IPC:420").status_code == 200
+        assert client.get("/map/IPC:420").status_code == 200
+
+    assert client.post("/chat", json={"question": "Theft in 2025?"}).status_code == 200

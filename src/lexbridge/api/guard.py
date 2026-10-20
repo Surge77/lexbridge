@@ -64,11 +64,14 @@ class RateLimiter:
 
 @dataclass(frozen=True)
 class Limits:
-    per_minute: RateLimiter  # per client, every request
+    per_minute: RateLimiter  # per client: questions and feedback
     per_day: RateLimiter  # per client, questions
     # One shared key: questions that need the model, across all clients. The free tier's
     # daily token budget is shared too, so no one client may spend it for everyone.
     model_calls: RateLimiter
+    # Per client: section and map lookups. They cost no model call, and reading an answer
+    # means opening several of them, so they are counted apart from questions.
+    lookups: RateLimiter
 
 
 class AnswerCache(Generic[K, V]):
