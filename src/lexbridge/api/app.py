@@ -22,9 +22,12 @@ from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import date
+from pathlib import Path as PathLib
 from typing import Annotated
 
 from fastapi import FastAPI, Path, Request, Response
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from lexbridge.answer.llm import LLMUnavailableError, ProviderError
 from lexbridge.answer.service import Answer, Status
@@ -49,6 +52,7 @@ SectionId = Annotated[str, Path(pattern=SECTION_ID)]
 # repeat; only answers and clarifications are worth serving again.
 CACHEABLE = frozenset({Status.ANSWERED, Status.CLARIFY})
 EVERYONE = "*"
+STATIC = PathLib(__file__).parent / "static"
 
 
 @dataclass(frozen=True)
@@ -100,9 +104,9 @@ def create_app(services: Services) -> FastAPI:
                               thread_name_prefix="answer")
     in_flight = 0  # touched only on the event loop's thread
 
-    def limit(request: Request, *also: RateLimiter) -> None:
+    def limit(request: Request, *limiters: RateLimiter) -> None:
         client = client_of(request, s.proxy_hops)
-        for limiter in (s.limits.per_minute, *also):
+        for limiter in limiters:
             if (wait := limiter.wait(client)) > 0:
                 raise ApiError(429, "RATE_LIMITED", "Too many requests; please wait a "
                                "moment.", _retry_after(wait))
@@ -144,6 +148,12 @@ def create_app(services: Services) -> FastAPI:
             logger.error("trace not written: %s", type(e).__name__)
             return None
 
+    app.mount("/static", StaticFiles(directory=STATIC), name="static")
+
+    @app.get("/", include_in_schema=False)
+    async def page() -> FileResponse:
+        return FileResponse(STATIC / "index.html")
+
     @app.get("/health")
     async def health() -> HealthOut:
         return HealthOut(status="ok", bundle=s.bundle.root.name,
@@ -151,7 +161,7 @@ def create_app(services: Services) -> FastAPI:
 
     @app.get("/section/{section_id}")
     async def section(section_id: SectionId, request: Request) -> SectionOut:
-        limit(request)
+        limit(request, s.limits.lookups)
         if section_id not in s.bundle:
             raise ApiError(404, "NOT_FOUND", "No such section in this bundle.")
         found = s.bundle.section(section_id)
@@ -160,7 +170,7 @@ def create_app(services: Services) -> FastAPI:
 
     @app.get("/map/{section_id}")
     async def mapping(section_id: SectionId, request: Request) -> MapOut:
-        limit(request)
+        limit(request, s.limits.lookups)
         if section_id not in s.bundle:
             raise ApiError(404, "NOT_FOUND", "No such section in this bundle.")
         return MapOut(id=section_id, replaced_by=list(s.bundle.replaced_by(section_id)),
@@ -168,7 +178,7 @@ def create_app(services: Services) -> FastAPI:
 
     @app.post("/chat")
     async def chat(body: ChatRequest, request: Request) -> ChatResponse:
-        limit(request, s.limits.per_day)
+        limit(request, s.limits.per_minute, s.limits.per_day)
         question = " ".join(body.question.split())
         key = (question.casefold(), body.offence_date)
         start = time.perf_counter()
@@ -186,7 +196,7 @@ def create_app(services: Services) -> FastAPI:
 
     @app.post("/feedback", status_code=204)
     async def feedback(body: FeedbackRequest, request: Request) -> Response:
-        limit(request)
+        limit(request, s.limits.per_minute)
         found = await asyncio.get_running_loop().run_in_executor(
             None, lambda: s.traces.feedback(body.trace_id, helpful=body.helpful))
         if not found:

@@ -48,7 +48,7 @@ dev = [
 where = ["src"]
 
 [tool.setuptools.package-data]
-lexbridge = ["py.typed"]
+lexbridge = ["py.typed", "api/static/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
