@@ -298,6 +298,13 @@ def test_the_page_and_its_assets_are_served_with_a_strict_policy(client: Client)
     assert page.headers["x-content-type-options"] == "nosniff"
 
 
+def test_the_page_is_revalidated_so_a_new_build_is_never_served_stale(client: Client) -> None:
+    # The built page keeps stable file names (app.js, index.css), so caches must ask first.
+    for path in ("/", "/static/app.js"):
+        assert client.get(path).headers["cache-control"] == "no-cache"
+    assert "cache-control" not in client.get("/health").headers
+
+
 def test_looking_up_sections_does_not_use_up_the_question_allowance(tmp_path: Path) -> None:
     client = client_for(tmp_path, Asker(), per_minute=1)
     for _ in range(4):

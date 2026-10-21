@@ -76,6 +76,9 @@ def install(app: FastAPI) -> None:
         response.headers["Content-Security-Policy"] = CSP
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Referrer-Policy"] = "no-referrer"
+        # The built page has stable file names, so a browser must check before reusing them.
+        if request.url.path == "/" or request.url.path.startswith("/static/"):
+            response.headers["Cache-Control"] = "no-cache"
         return response
 
     @app.middleware("http")
