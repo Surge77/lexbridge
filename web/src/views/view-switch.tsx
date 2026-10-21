@@ -1,6 +1,7 @@
-export type View = "board" | "receipt";
+export type View = "receipt" | "board";
 
-export const VIEWS: View[] = ["board", "receipt"];
+// The first view is the main one: what / shows with no choice made.
+export const VIEWS: View[] = ["receipt", "board"];
 
 interface ViewSwitchProps {
   view: View;
