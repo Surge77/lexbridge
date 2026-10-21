@@ -133,8 +133,8 @@ Square paper sheets. The notice carries its status as a flap stamp beside the he
 ### Buttons
 The Ask key is the only filled control: cream, like a flap, with a dark legend and a short base that collapses when pressed. Example questions and secondary actions are outlined condensed caps; text actions are underlined.
 
-### Receipt view (second style)
-A Board | Receipt switch in each header picks the page style; the choice is remembered per browser and `/?view=receipt` links to it. The receipt view is its own scoped world (`.kiosk-page` tokens in `receipt.css`, loaded only when chosen): a graphite help-desk kiosk with a pale-blue screen and a yellow Print key, and the answer printed as thermal paper (Sometype Mono, torn edge) ending in a Code 128 barcode of the trace id. An opened section prints as a second slip beneath. Same logic, states and accessibility as the board; only the presentation differs. The board's rules (amber for code letters only, no light theme) govern the board view only.
+### Receipt view (the main page)
+The receipt is what `/` shows. A Receipt | Board switch in each header picks the page style; the choice is remembered per browser and `/?view=board` links to the board, which is lazy-loaded with its fonts. The receipt view is its own scoped world (`.kiosk-page` tokens in `receipt.css`): a graphite help-desk kiosk with a pale-blue screen and a yellow Print key, and the answer printed as thermal paper (Sometype Mono, torn edge) ending in a Code 128 barcode of the trace id. An opened section prints as a second slip beneath. Same logic, states and accessibility as the board; only the presentation differs. The board's rules (amber for code letters only, no light theme) govern the board view only.
 
 ## Do's and Don'ts
 

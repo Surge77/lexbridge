@@ -23,7 +23,6 @@ html[data-view="receipt"], html[data-view="receipt"] body { background: #c9cdd2;
 }
 .kiosk-page ::selection { background: var(--key); color: var(--therm); }
 .kiosk-page :focus-visible { outline: 3px solid var(--key); outline-offset: 2px; }
-.loading-view { margin: 40px auto; text-align: center; color: #9298a0; }
 
 .stage { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 460px); align-items: stretch; }
 

@@ -24,9 +24,15 @@ function serve(answer: ChatAnswer | { status: number; body: unknown }) {
   return fetchMock;
 }
 
+// The board is lazy-loaded; the first load is slow under coverage.
+async function boardView() {
+  render(<App />);
+  await screen.findByRole("button", { name: "Ask" }, { timeout: 15_000 });
+}
+
 async function askQuestion(question = "Someone cheated me of money in August 2024.") {
   const user = userEvent.setup();
-  render(<App />);
+  await boardView();
   const box = screen.getByLabelText("What happened");
   await user.clear(box);
   await user.type(box, question);
@@ -34,13 +40,17 @@ async function askQuestion(question = "Someone cheated me of money in August 202
   return user;
 }
 
-beforeEach(() => vi.stubGlobal("matchMedia", undefined));
+beforeEach(() => {
+  vi.stubGlobal("matchMedia", undefined);
+  window.history.replaceState(null, "", "/?view=board");
+  window.localStorage.clear();
+});
 afterEach(() => vi.unstubAllGlobals());
 
-describe("App", () => {
-  it("opens on real correspondences before any question", () => {
+describe("board view", () => {
+  it("opens on real correspondences before any question", async () => {
     serve(answerOf());
-    render(<App />);
+    await boardView();
     expect(screen.getByRole("button", { name: /BNS 318\(4\), was IPC 420/ })).toBeTruthy();
     expect(screen.getByText("Ask a question")).toBeTruthy();
   });
@@ -96,7 +106,7 @@ describe("App", () => {
   it("opens an example row's section before any question", async () => {
     serve(answerOf());
     const user = userEvent.setup();
-    render(<App />);
+    await boardView();
     await user.click(screen.getByRole("button", { name: /BNS 318\(4\), was IPC 420/ }));
     expect(await screen.findByRole("heading", { name: "BNS 318. Cheating." })).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Close" }));
@@ -106,7 +116,7 @@ describe("App", () => {
   it("says when a section cannot be opened", async () => {
     serve(answerOf());
     const user = userEvent.setup();
-    render(<App />);
+    await boardView();
     await user.click(screen.getByRole("button", { name: /BNS 103\(1\), was IPC 302/ }));
     expect((await screen.findByRole("alert")).textContent).toContain("No such section");
   });
@@ -120,7 +130,7 @@ describe("App", () => {
   it("asks for a question before sending an empty one", async () => {
     const fetchMock = serve(answerOf());
     const user = userEvent.setup();
-    render(<App />);
+    await boardView();
     await user.clear(screen.getByLabelText("What happened"));
     await user.click(screen.getByRole("button", { name: "Ask" }));
     expect((await screen.findByRole("alert")).textContent).toContain("Write what happened");
@@ -136,7 +146,7 @@ describe("App", () => {
   it("fills the question from an example", async () => {
     serve(answerOf());
     const user = userEvent.setup();
-    render(<App />);
+    await boardView();
     await user.click(screen.getByRole("button", { name: "IPC 302 to BNS" }));
     expect((screen.getByLabelText("What happened") as HTMLTextAreaElement).value).toBe("What is the BNS equivalent of IPC section 302?");
   });
@@ -144,7 +154,7 @@ describe("App", () => {
   it("reads the code in force from the date on the clock", async () => {
     serve(answerOf());
     const user = userEvent.setup();
-    render(<App />);
+    await boardView();
     await user.type(screen.getByLabelText(/Date of the offence/), "2024-06-30");
     expect(screen.getByText("30 Jun 2024: Indian Penal Code")).toBeTruthy();
   });

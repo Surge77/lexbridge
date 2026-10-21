@@ -29,6 +29,7 @@ body { margin: 0; background: var(--housing); color: var(--char); font: 17px/1.5
 ::selection { background: var(--code); color: var(--bezel); }
 :focus-visible { outline: 2px solid var(--code); outline-offset: 3px; }
 button { font: inherit; color: inherit; }
+.loading-view { margin: 40px auto; text-align: center; color: var(--dim); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 .page {
