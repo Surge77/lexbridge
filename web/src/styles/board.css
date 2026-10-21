@@ -1,0 +1,55 @@
+/* The board: a recessed bezel holding rows of flap cells. Each cell is two painted halves
+   split by a hairline, the way a real flap drum shows one leaf over another. */
+.board {
+  background: var(--bezel); border-radius: 10px; padding: 14px 16px 16px;
+  box-shadow: inset 0 3px 10px rgb(0 0 0 / .7), 0 1px 0 rgb(255 255 255 / .05);
+}
+.board-head, .board-row {
+  display: grid; grid-template-columns: repeat(4, max-content) minmax(0, 1fr); column-gap: calc(var(--flap-size) * .9);
+  justify-content: start; align-items: center;
+}
+.board-head { padding: 0 6px 10px; font: 600 .78rem var(--cond); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+.board-head span:nth-child(1) { width: calc(var(--flap-size) * 3.24); }
+.board-head span:nth-child(2) { width: calc(var(--flap-size) * 6.48); }
+.board-head span:nth-child(3) { width: calc(var(--flap-size) * 11.88); }
+.board-head span:nth-child(4) { width: calc(var(--flap-size) * 21.6); }
+.board-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.board-row {
+  width: 100%; padding: 4px 6px; background: none; border: 0; border-radius: 4px; text-align: left; cursor: pointer;
+  transition: background .15s;
+}
+button.board-row:hover { background: var(--housing-hi); }
+button.board-row.is-cited { box-shadow: inset 3px 0 0 var(--go); }
+button.board-row[aria-current="true"] { background: var(--housing-hi); }
+.board-row.is-empty { cursor: default; }
+.board-message { margin-top: 12px; padding: 10px 6px 0; border-top: 1px solid #1d1f23; }
+
+.board-message .flaps { flex-wrap: wrap; }
+.board-legend { margin: 10px 6px 0; font-size: .84rem; color: var(--dim); }
+.flaps { display: inline-flex; flex-wrap: nowrap; gap: calc(var(--flap-size) * .08); font-size: var(--flap-size); }
+.flap {
+  position: relative; display: inline-block; width: 1em; height: 1.42em;
+  font: 600 1em/1.42em var(--cond); text-align: center; text-transform: uppercase; color: var(--char);
+  background: linear-gradient(var(--flap-top) 0 50%, var(--flap-bottom) 50% 100%);
+  border-radius: 2px; box-shadow: 0 1px 0 rgb(0 0 0 / .55);
+}
+.flap::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: rgb(0 0 0 / .7); }
+.tone-code .flap { color: var(--code); }
+.tone-dim .flap { color: var(--dim); }
+.tone-go .flap { color: var(--go); }
+.tone-wait .flap { color: var(--wait); }
+.tone-stop .flap { color: var(--stop); }
+
+.clock .flaps { font-size: clamp(16px, 1.6vw, 22px); }
+.proof .flaps { font-size: 20px; }
+
+@media (max-width: 760px) {
+  :root { --flap-size: 13.5px; }
+  .board { padding: 10px; }
+  .board-head { display: none; }
+  /* Code, number and the old/new counterpart stay on one line: the renumbering is the point.
+     The status column gives way; cited rows keep their green light on the left edge. */
+  .board-row { grid-template-columns: auto auto auto; row-gap: 6px; }
+  .board-row > :nth-child(4) { grid-column: 1 / -1; grid-row: 2; }
+  .board-row > :nth-child(5) { display: none; }
+}

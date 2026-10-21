@@ -27,3 +27,10 @@ artifacts/
 
 # Checkpoints of an interrupted generation eval; removed when the run completes.
 reports/generation/*.partial.jsonl
+
+# Web page sources live in web/; their build is committed under src/lexbridge/api/static.
+web/node_modules/
+web/coverage/
+
+# Impeccable review captures are working evidence, not part of the product.
+.impeccable/review/

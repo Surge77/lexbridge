@@ -121,8 +121,18 @@ API: `POST /chat {"question", "offence_date"?}`, `GET /section/{IPC|BNS:id}`,
 `GET /map/{id}`, `POST /feedback`, `GET /health`. Per client: 5 questions a minute and 50
 a day; 400 model-backed answers a day across everyone; repeated questions are cached.
 
+The page is a React app in `web/`, built into `src/lexbridge/api/static/` and committed, so
+running the API needs no Node. To change it (Node 24):
+
+```bash
+cd web && npm ci
+npm run dev        # http://localhost:5173/static/, API calls proxied to :8000
+npm run build      # rebuild the committed page; CI fails if it is stale
+```
+
 Development gates, as in CI: `ruff check .`, `pyright`, `pytest --cov` (≥ 90%, unit tests
-cannot open a network connection), `pytest -m integration` (real PDFs). The evaluations:
+cannot open a network connection), `pytest -m integration` (real PDFs); for the page, `npm run typecheck` and
+`npm run coverage` (≥ 80%) in `web/`. The evaluations:
 `python -m lexbridge.eval.run` (retrieval) and `python -m lexbridge.eval.generation`
 (answers; spends ~65k free-tier tokens, checkpointed).
 

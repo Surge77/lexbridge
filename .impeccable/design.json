@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-21T00:00:00Z",
+  "title": "Design System: LexBridge",
+  "extensions": {
+    "colorMeta": {
+      "code-amber": { "role": "primary", "displayName": "Code Amber" },
+      "housing": { "role": "neutral", "displayName": "Housing Charcoal" },
+      "bezel": { "role": "neutral", "displayName": "Bezel" },
+      "paper": { "role": "neutral", "displayName": "Timetable Paper" },
+      "status-go": { "role": "status", "displayName": "Answered" },
+      "status-wait": { "role": "status", "displayName": "Needs a date" },
+      "status-stop": { "role": "status", "displayName": "Not covered" }
+    },
+    "typographyMeta": {
+      "flap": { "displayName": "Flap", "purpose": "One uppercase character per flap cell." },
+      "display": { "displayName": "Nameplate", "purpose": "The LexBridge nameplate only." },
+      "label": { "displayName": "Label", "purpose": "Field and column labels." },
+      "body": { "displayName": "Body", "purpose": "Answers, statute text and notes." }
+    },
+    "shadows": [
+      { "name": "bezel-inset", "value": "inset 0 3px 10px rgb(0 0 0 / .7), 0 1px 0 rgb(255 255 255 / .05)", "purpose": "Recesses the board into the housing." },
+      { "name": "flap-proud", "value": "0 1px 0 rgb(0 0 0 / .55)", "purpose": "Lifts each flap one pixel off the board." },
+      { "name": "paper-drop", "value": "0 10px 24px rgb(0 0 0 / .35)", "purpose": "Paper sheets resting on the housing." },
+      { "name": "key-base", "value": "0 3px 0 #a8a294", "purpose": "The Ask key's travel; collapses to 1px when pressed." }
+    ],
+    "motion": [
+      { "name": "flap-step", "value": "32ms per character, forward only", "purpose": "Split-flap turn; only changed cells move. Off under reduced motion." }
+    ],
+    "breakpoints": [
+      { "name": "board-stack", "value": "760px" },
+      { "name": "single-column", "value": "860px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Ask Key",
+      "kind": "button",
+      "refersTo": "ask-key",
+      "description": "The one filled control, cream like a flap: submits the question.",
+      "html": "<button class=\"ds-ask\">Ask</button>",
+      "css": ".ds-ask { font: 700 1.35rem 'Barlow Condensed', sans-serif; letter-spacing: .12em; text-transform: uppercase; color: #0e0f11; background: #f1ede2; border: 0; border-radius: 6px; padding: 14px 26px; box-shadow: 0 3px 0 #a8a294; } .ds-ask:active { transform: translateY(2px); box-shadow: 0 1px 0 #a8a294; }"
+    },
+    {
+      "name": "Flap Strip",
+      "kind": "custom",
+      "refersTo": "flap",
+      "description": "Fixed-width row of split-flap cells.",
+      "html": "<span class=\"ds-flaps\"><span>B</span><span>N</span><span>S</span></span>",
+      "css": ".ds-flaps { display: inline-flex; gap: 2px; font-size: 21px; } .ds-flaps span { position: relative; width: 1em; height: 1.42em; font: 600 1em/1.42em 'Barlow Condensed', sans-serif; text-align: center; color: #ffbe2e; background: linear-gradient(#35383d 0 50%, #2a2c31 50% 100%); border-radius: 2px; } .ds-flaps span::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: rgb(0 0 0 / .7); }"
+    },
+    {
+      "name": "Question Field",
+      "kind": "input",
+      "refersTo": "question-field",
+      "description": "The question well, recessed like the board.",
+      "html": "<textarea class=\"ds-field\" rows=\"2\">Someone cheated me of money in August 2024.</textarea>",
+      "css": ".ds-field { width: 100%; font: 500 1.1rem/1.45 Barlow, sans-serif; color: #f1ede2; background: #0e0f11; border: 1px solid #3a3d43; border-radius: 6px; padding: 12px 14px; caret-color: #ffbe2e; }"
+    },
+    {
+      "name": "Answer Notice",
+      "kind": "card",
+      "refersTo": "notice",
+      "description": "Square printed sheet under the board carrying the answer prose.",
+      "html": "<article class=\"ds-notice\"><h2>Answer</h2><p>Assuming the offence was committed in August 2024, the BNS applies.</p></article>",
+      "css": ".ds-notice { background: #eef0f2; color: #15171a; padding: 22px 24px 20px; box-shadow: 0 10px 24px rgb(0 0 0 / .35); font: 400 17px/1.55 Barlow, sans-serif; } .ds-notice h2 { margin: 0 0 10px; font: 700 1.35rem 'Barlow Condensed', sans-serif; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Departures Board",
+    "overview": "Every section number changed on 1 July 2024; the page is a split-flap board that makes the renumbering physical. Prose lives on paper pinned beneath the board.",
+    "keyCharacteristics": ["Flaps turn only where a value changed", "Amber for code letters only", "Status colours mean status only", "One committed dark theme"],
+    "rules": [
+      { "name": "Status Is Not The Accent", "body": "Green, orange and red mean answered, needs a date, not covered; never decoration.", "section": "colors" },
+      { "name": "No Glow", "body": "Depth from the bezel inset and the flap split line only.", "section": "elevation" }
+    ],
+    "dos": ["Show every section on flaps with its counterpart", "Scramble while checking, settle only changed cells", "Render model output as text"],
+    "donts": ["No light theme or second accent", "No prose on the flaps", "No flipping unchanged cells"]
+  }
+}
