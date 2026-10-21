@@ -27,6 +27,8 @@ export default defineConfig({
     environment: "jsdom",
     include: ["tests/**/*.test.{ts,tsx}"],
     setupFiles: ["tests/setup.ts"],
+    // Typing simulation and the first lazy load of the receipt view are slow under coverage.
+    testTimeout: 20_000,
     coverage: {
       include: ["src/**/*.{ts,tsx}"],
       exclude: ["src/main.tsx"],

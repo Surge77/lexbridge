@@ -17,7 +17,7 @@ export function spokenDate(iso: string): string {
   const face = clockFace(iso);
   if (face === BLANK) return "";
   const [day, month = "", year] = face.split(" ");
-  return `${day} ${month.charAt(0)}${month.slice(1).toLowerCase()} ${year}`;
+  return `${Number(day)} ${month.charAt(0)}${month.slice(1).toLowerCase()} ${year}`;
 }
 
 // ISO dates compare correctly as strings.
