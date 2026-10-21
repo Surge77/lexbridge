@@ -8,9 +8,11 @@ interface SectionSheetProps {
   map: MapOut;
   onOpen: (id: string) => void;
   onClose: () => void;
+  // "slip": the receipt view's stapled print of the section; same content, its own styling.
+  variant?: "sheet" | "slip";
 }
 
-export function SectionSheet({ section, map, onOpen, onClose }: SectionSheetProps) {
+export function SectionSheet({ section, map, onOpen, onClose, variant = "sheet" }: SectionSheetProps) {
   const heading = useRef<HTMLHeadingElement>(null);
   // The sheet opens below the board, out of the reader's focus; take them to it.
   useEffect(() => heading.current?.focus(), [section.id]);
@@ -18,7 +20,7 @@ export function SectionSheet({ section, map, onOpen, onClose }: SectionSheetProp
   const others = section.act === "BNS" ? map.replaces : map.replaced_by;
   const relation = section.act === "BNS" ? "Takes over" : "Replaced by";
   return (
-    <article className="sheet" aria-labelledby="sheet-title">
+    <article className={variant} aria-labelledby="sheet-title">
       <div className="sheet-head">
         <h2 id="sheet-title" tabIndex={-1} ref={heading}>{`${section.act} ${section.number}. ${section.title}.`}</h2>
         <button type="button" className="text-button" onClick={onClose}>Close</button>

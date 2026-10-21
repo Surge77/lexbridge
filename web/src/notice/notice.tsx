@@ -1,6 +1,5 @@
-import { useState } from "react";
-
-import { sendFeedback, type ChatAnswer } from "../api";
+import type { ChatAnswer } from "../api";
+import { useVote } from "./use-vote";
 
 interface NoticeProps {
   answer: ChatAnswer;
@@ -9,23 +8,10 @@ interface NoticeProps {
 
 const HEADING = { answered: "Answer", clarify: "One more detail", declined: "Not covered" } as const;
 
-type Vote = "open" | "sending" | "sent" | "failed";
-
 // The printed sheet pinned under the board: the answer in full, its citations, one vote.
 // Model output is rendered as text, never as markup.
 export function Notice({ answer, onOpen }: NoticeProps) {
-  const [vote, setVote] = useState<Vote>("open");
-
-  async function cast(helpful: boolean) {
-    if (!answer.trace_id) return;
-    setVote("sending");
-    try {
-      await sendFeedback(answer.trace_id, helpful);
-      setVote("sent");
-    } catch {
-      setVote("failed");
-    }
-  }
+  const [vote, cast] = useVote(answer.trace_id);
 
   return (
     <article className="notice">
